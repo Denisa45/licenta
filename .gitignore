@@ -1,0 +1,14 @@
+# Already its own repository, with its own history and remote
+sign-language-robot-hand/
+
+# Python
+ml/.venv/
+**/__pycache__/
+*.pyc
+*.joblib
+
+# Firebase CLI log
+firebase-debug.log
+
+# Word and Excel temp files
+~$*

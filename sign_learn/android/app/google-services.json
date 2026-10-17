@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "430163926603",
+    "project_id": "sign-language-robot-hand",
+    "storage_bucket": "sign-language-robot-hand.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:430163926603:android:5063b8c868a3c24d16f7ce",
+        "android_client_info": {
+          "package_name": "com.example.sign_learn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCn8yy3JcNsYS4Z7l4ycEYspQ0eT6LFMBA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

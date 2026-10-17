@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mână în mână – Aplicația web: specificații și cerințe</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#eaf4fb;--paper:#fff;--ink:#12304d;--mut:#5d7a94;--acc:#2f80c9;--co:#ff8a65;--line:#d5e5f1;--tint:#f2f8fd}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1a2b;--paper:#12263d;--ink:#e8f1fa;--mut:#8aa4bd;--acc:#5aa7e6;--line:#20405f;--tint:#183350}}
+:root[data-theme="dark"]{--bg:#0b1a2b;--paper:#12263d;--ink:#e8f1fa;--mut:#8aa4bd;--acc:#5aa7e6;--line:#20405f;--tint:#183350}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+.page{max-width:794px;margin:20px auto;background:var(--paper);padding:34px 38px;border-radius:6px;box-shadow:0 6px 24px rgba(18,48,77,.12)}
+h1{font-family:Georgia,serif;font-size:27px;margin:0;color:var(--acc)}
+.sub{color:var(--mut);margin:2px 0 14px}
+.meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--mut);border-bottom:3px solid var(--co);padding-bottom:10px;margin-bottom:12px}
+h2{font-family:Georgia,serif;font-size:16px;margin:16px 0 6px;color:var(--acc);border-left:4px solid var(--co);padding-left:8px}
+p{margin:4px 0}ul{margin:4px 0;padding-left:20px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin:6px 0}
+th,td{text-align:left;padding:4px 7px;border:1px solid var(--line);vertical-align:top}
+th{background:var(--tint)}
+td:first-child{white-space:nowrap;font-weight:700;color:var(--acc)}
+.flow{background:var(--tint);border-radius:8px;padding:8px 10px;font-size:12.5px;margin:6px 0}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--tint);padding:0 4px;border-radius:4px}
+.wrap{overflow-x:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.note{color:var(--mut);font-size:12px}
+@media(max-width:640px){.page{padding:22px 16px;margin:0}.two{grid-template-columns:1fr}}
+@media print{
+  @page{size:A4;margin:12mm}
+  :root{--bg:#fff;--paper:#fff;--ink:#12304d;--mut:#5d7a94;--acc:#2f80c9;--line:#d5e5f1;--tint:#f2f8fd}
+  body{font-size:10pt;background:#fff}
+  .page{box-shadow:none;margin:0;padding:0;max-width:none}
+  table{font-size:9pt}h2,table,.flow{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<h1>Mână în mână · Aplicația web</h1>
+<div class="sub">Specificații și cerințe pentru partea de web, derivate din planul tehnic preliminar</div>
+<div class="meta"><span>Versiune 0.1 (draft)</span><span>Data: 30.09.2026</span><span>Client: browser (desktop + mobil)</span><span>Backend: Firebase</span></div>
+
+<h2>1. Scop și rol în sistem</h2>
+<p>Aplicația web este o <b>interfață pentru utilizator</b>, echivalentă ca rol cu aplicația Android din plan: lecții, exersare, rezultate și progres. Ea <b>nu accesează direct hardware-ul</b>. Comunică exclusiv prin Firebase, iar Raspberry Pi 4B execută comenzile, rulează Computer Vision și ML și scrie rezultatele înapoi (planul, secț. 10).</p>
+<div class="flow">Browser → Firebase (Auth + baza de date) → Raspberry Pi → PCA9685 → mână robotică · Webcam → CV → ML → evaluare → Firebase → Browser</div>
+<p class="note">Decizie asumată: analiza imaginii se face pe Raspberry Pi (webcam USB), deci site-ul nu folosește camera browserului și nu trimite imagini în cloud. Se pot trimite doar rezultatele.</p>
+
+<h2>2. Ecrane și experiență</h2>
+<div class="wrap"><table>
+<tr><th>Ecran</th><th>Conținut</th></tr>
+<tr><td>Home / Drumul meu</td><td>Traseu pe capitole și niveluri (câte un semn per nivel, deblocare succesivă), progres sumar, exerciții recente.</td></tr>
+<tr><td>Lessons</td><td>Selectarea semnului, a dificultății și a lecției din catalogul <code>signs</code>.</td></tr>
+<tr><td>Practice</td><td>Semnul selectat, instrucțiuni, starea demonstrației robotului, momentul în care utilizatorul execută semnul. Pași: demonstrație → verificare recunoaștere → exersare.</td></tr>
+<tr><td>Results</td><td>Semn țintă, semn detectat, confidence, indicator de similaritate, feedback. Include mențiunea că scorul este un indicator tehnic, nu o certificare a competenței.</td></tr>
+<tr><td>Progress / Jurnal</td><td>Număr de exerciții, rezultate istorice, evoluție pe fiecare semn.</td></tr>
+</table></div>
+
+<h2>3. Integrarea cu Firebase</h2>
+<div class="wrap"><table>
+<tr><th>Nod / colecție</th><th>Acces web</th><th>Utilizare</th></tr>
+<tr><td>users</td><td>citire/scriere (doar al său)</td><td>Profil, preferințe.</td></tr>
+<tr><td>signs</td><td>doar citire</td><td>Catalog: nume, dificultate; <code>robot_pose</code> și <code>reference_features</code> rămân pentru Pi.</td></tr>
+<tr><td>robot_commands</td><td>creare</td><td>Comandă nouă: <code>sign</code>, <code>status = pending</code>, <code>timestamp</code>.</td></tr>
+<tr><td>robot_status</td><td>citire (live)</td><td><code>state</code>, <code>current_sign</code>, <code>last_update</code> pentru afișarea stării robotului.</td></tr>
+<tr><td>recognition</td><td>citire (live)</td><td><code>target_sign</code>, <code>predicted_sign</code>, <code>confidence</code>, <code>execution_score</code>.</td></tr>
+<tr><td>practice_sessions, progress</td><td>citire</td><td>Istoric și progres; scrierea o face Pi sau o regulă controlată.</td></tr>
+</table></div>
+<p><b>Ciclul comenzii:</b> <code>pending</code> → <code>processing</code> → <code>completed</code> sau <code>error</code> (cu <code>error_message</code>). Site-ul urmărește statusul în timp real și trece la pasul „Acum tu” abia la <code>completed</code>.</p>
+
+<h2>4. Cerințe funcționale</h2>
+<div class="wrap"><table>
+<tr><th>ID</th><th>Cerință</th></tr>
+<tr><td>WEB-01</td><td>Autentificare prin Firebase Auth; toate datele sunt asociate contului.</td></tr>
+<tr><td>WEB-02</td><td>Afișarea traseului de lecții cu niveluri deblocate în ordine și starea fiecărui nivel (blocat / curent / terminat).</td></tr>
+<tr><td>WEB-03</td><td>Încărcarea catalogului de semne din Firebase (MVP: 10–15 semne statice); adăugarea unui semn nu cere modificarea codului.</td></tr>
+<tr><td>WEB-04</td><td>La pornirea unei lecții se creează în <code>robot_commands</code> o comandă cu <code>status = pending</code>, o singură dată (fără dubluri la dublu-click sau reîncărcare).</td></tr>
+<tr><td>WEB-05</td><td>Afișarea în timp real a stării comenzii și a robotului (în așteptare, se execută, gata, eroare, offline).</td></tr>
+<tr><td>WEB-06</td><td>Indicarea clară a momentului în care utilizatorul trebuie să execute semnul, după finalizarea demonstrației.</td></tr>
+<tr><td>WEB-07</td><td>Preluarea și afișarea rezultatului din <code>recognition</code>: țintă, detectat, confidence, similaritate, feedback.</td></tr>
+<tr><td>WEB-08</td><td>Dacă <code>predicted_sign = UNKNOWN</code> (confidence sub prag), se afișează un mesaj de reîncercare, fără penalizare severă.</td></tr>
+<tr><td>WEB-09</td><td>Ecran de progres: număr de exerciții, istoric, evoluție pe semn.</td></tr>
+<tr><td>WEB-10</td><td>Feedback blând și motivațional (puncte, serie de zile, încercări) fără a modifica datele oficiale de recunoaștere.</td></tr>
+</table></div>
+
+<h2>5. Cerințe non-funcționale</h2>
+<div class="wrap"><table>
+<tr><th>ID</th><th>Cerință</th></tr>
+<tr><td>WEB-N1</td><td><b>Responsive:</b> utilizabil pe telefon și desktop, cu suport pentru mod luminos și întunecat.</td></tr>
+<tr><td>WEB-N2</td><td><b>Compatibilitate:</b> versiunile curente ale Chrome, Edge, Firefox și Safari.</td></tr>
+<tr><td>WEB-N3</td><td><b>Latență:</b> actualizările de status apar în UI în aproximativ o secundă de la scrierea în Firebase (țintă de măsurat; nu include timpul mecanic al robotului).</td></tr>
+<tr><td>WEB-N4</td><td><b>Securitate:</b> reguli Firebase care limitează fiecare utilizator la datele proprii; site-ul nu conține chei sau acces privilegiat.</td></tr>
+<tr><td>WEB-N5</td><td><b>Robustețe:</b> tratarea pierderii conexiunii, a robotului offline și a timeout-ului; reluare fără a retrimite comanda deja executată.</td></tr>
+<tr><td>WEB-N6</td><td><b>Limbă și accesibilitate:</b> interfață în română, contrast suficient, navigare de la tastatură, text alternativ pentru demonstrațiile vizuale.</td></tr>
+<tr><td>WEB-N7</td><td><b>Testabilitate:</b> mod demo cu date simulate (ca prototipul actual), pentru testarea site-ului fără Pi și robot.</td></tr>
+</table></div>
+
+<div class="two">
+<div>
+<h2>6. Situații alternative</h2>
+<ul>
+<li>Robot offline sau <code>error</code> → mesaj și buton de reîncercare.</li>
+<li>Webcam indisponibil (raportat de Pi) → sesiune marcată ca eroare.</li>
+<li>Servo în afara limitelor → comandă respinsă de Pi; site-ul afișează <code>error_message</code>.</li>
+<li>Fără internet → banner de conexiune, fără comenzi noi.</li>
+</ul>
+</div>
+<div>
+<h2>7. Tehnologii propuse</h2>
+<ul>
+<li>HTML/CSS/JavaScript sau un framework la alegere (ex. React).</li>
+<li>Firebase Web SDK: Auth și baza de date (Realtime Database sau Firestore, de decis).</li>
+<li>Firebase Hosting pentru publicare.</li>
+</ul>
+</div>
+</div>
+
+<h2>8. Plan și criterii de acceptare</h2>
+<p><b>Plan (aliniat cu planul tehnic):</b> prototip web cu date simulate (deja realizat) → integrare Firebase și robot în paralel cu Android (decembrie) → testare cu mai mulți utilizatori și măsurarea latenței (ianuarie) → stabilizare și documentație (februarie).</p>
+<ul>
+<li>Un utilizator autentificat parcurge de pe web un ciclu complet: selectare semn → comandă → demonstrație → rezultat → progres salvat.</li>
+<li>Rezultatele afișate pe web coincid cu cele din Android pentru aceeași sesiune.</li>
+<li>Site-ul nu trimite nicio comandă dublă și tratează corect cel puțin: robot offline, confidence scăzut și pierderea conexiunii.</li>
+</ul>
+<p class="note"><b>În afara scopului MVP:</b> semne dinamice, certificare oficială a competenței, procesarea video în browser. <b>De decis:</b> Realtime Database sau Firestore, metoda de autentificare, dacă web și Android au aceleași funcții.</p>
+</div>
+</body>
+</html>
