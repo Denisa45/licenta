@@ -172,11 +172,25 @@ class _LessonScreenState extends State<LessonScreen> {
         [for (final s in others) s.name],
         visual: HandPoseView(pose: sign.robotPose, height: 160),
       ),
-      single(
-        'Care descriere se potrivește semnului ${sign.name}?',
-        sign.description,
-        [for (final s in others) s.description],
-      ),
+      // Descriptions only work as answers when they exist and differ;
+      // otherwise ask which sign has these fingers up.
+      if (sign.description.isNotEmpty &&
+          others.any((s) =>
+              s.description.isNotEmpty && s.description != sign.description))
+        single(
+          'Care descriere se potrivește semnului ${sign.name}?',
+          sign.description,
+          [for (final s in others) s.description],
+        )
+      else
+        single(
+          'Care semn se face ridicând ${sign.raisedFingersText}?',
+          sign.name,
+          [
+            for (final s in others)
+              if (s.raisedFingersText != sign.raisedFingersText) s.name,
+          ],
+        ),
       _Question(
         prompt: 'Ce degete sunt ridicate la semnul ${sign.name}?',
         hint: 'Alege toate degetele ridicate.',
@@ -310,7 +324,7 @@ class _LessonScreenState extends State<LessonScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text(sign.description, style: text.bodyLarge),
+                      Text(sign.howTo, style: text.bodyLarge),
                       if (fingers.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Text(

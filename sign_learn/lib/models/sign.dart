@@ -37,6 +37,18 @@ class Sign {
   List<String> get raisedFingers =>
       [for (final f in kFingers) if ((robotPose[f] ?? 0) == 1) f];
 
+  /// Raised fingers in Romanian, e.g. "arătătorul și mijlociul".
+  String get raisedFingersText {
+    final names = [for (final f in raisedFingers) kFingerNames[f]!];
+    if (names.length < 2) return names.join();
+    return '${names.sublist(0, names.length - 1).join(', ')} și ${names.last}';
+  }
+
+  /// The description from Firestore, or one made from robot_pose when it is empty.
+  String get howTo => description.isNotEmpty
+      ? description
+      : 'Ridică $raisedFingersText; celelalte degete rămân îndoite.';
+
   factory Sign.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
     final pose = (data['robot_pose'] as Map<String, dynamic>? ?? {});
