@@ -45,11 +45,10 @@ class SignCamera extends StatefulWidget {
   /// Quarter turns (clockwise) applied to the landmarks before classifying, for
   /// each way the tablet is held. Android 16 does not keep tablet apps in
   /// portrait, and the camera frames do not turn with the screen, so the turn
-  /// depends on how the tablet is held. Measured on the Galaxy Tab S9 FE+:
-  /// portrait with the camera on the right side -> 270°, landscape with the
-  /// camera on top -> 0°. Check the other two with the Rotire button (it changes
-  /// only the value of the current orientation) and write them here.
-  /// Not final, so the debug buttons can change them for the whole session.
+  /// depends on how the tablet is held. Checked on the Galaxy Tab S9 FE+ in all
+  /// four positions: portrait camera right 270°, landscape camera top 0°,
+  /// portrait camera left 90°, landscape camera bottom 180°.
+  /// Not final, so the Rotire debug button can still change them.
   static final Map<DeviceOrientation, int> turnsFor = {
     DeviceOrientation.portraitUp: 3,
     DeviceOrientation.landscapeLeft: 0,
