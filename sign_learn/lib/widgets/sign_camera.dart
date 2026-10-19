@@ -396,12 +396,16 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
             ),
             const SizedBox(width: 10),
           ],
-          Text(
-            text,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
-              color: matching ? cs.primary : cs.onSurface,
+          // Flexible: on a narrow preview the text wraps instead of overflowing.
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+                color: matching ? cs.primary : cs.onSurface,
+              ),
             ),
           ),
         ],
