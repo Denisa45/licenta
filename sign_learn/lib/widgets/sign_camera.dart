@@ -42,10 +42,20 @@ class SignCamera extends StatefulWidget {
   static const double trainW = 640;
   static const double trainH = 480;
 
-  /// Turn / flip applied to the landmarks before classifying. Find the values that
-  /// work with the debug buttons on the tablet, then write them here.
-  /// They are not final so the debug buttons can change them for the whole session.
-  static int rotation = 0; // quarter turns clockwise
+  /// Quarter turns (clockwise) applied to the landmarks before classifying, for
+  /// each way the tablet is held. Android 16 does not keep tablet apps in
+  /// portrait, and the camera frames do not turn with the screen, so the turn
+  /// depends on how the tablet is held. Measured on the Galaxy Tab S9 FE+:
+  /// portrait with the camera on the right side -> 270°, landscape with the
+  /// camera on top -> 0°. Check the other two with the Rotire button (it changes
+  /// only the value of the current orientation) and write them here.
+  /// Not final, so the debug buttons can change them for the whole session.
+  static final Map<DeviceOrientation, int> turnsFor = {
+    DeviceOrientation.portraitUp: 3,
+    DeviceOrientation.landscapeLeft: 0,
+    DeviceOrientation.portraitDown: 1,
+    DeviceOrientation.landscapeRight: 2,
+  };
   static bool mirror = false;
 
   /// Label the learner should show (for example '2'), or null for free practice.
@@ -108,8 +118,6 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Keep the screen upright so the camera frames match the sensor rotation.
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     _start();
   }
 
@@ -203,6 +211,9 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     if (mounted && !_disposed) setState(() {});
   }
 
+  DeviceOrientation get _orientation =>
+      _controller?.value.deviceOrientation ?? DeviceOrientation.portraitUp;
+
   void _onFrame(CameraImage image, int sensorOrientation) {
     final tracker = _tracker;
     if (_disposed || tracker == null) return;
@@ -229,8 +240,10 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     var w = _frameW.toDouble();
     var h = _frameH.toDouble();
 
-    // Turn the points a quarter turn clockwise, and/or mirror them.
-    for (var i = 0; i < SignCamera.rotation; i++) {
+    // Turn the points to match how the tablet is held, and/or mirror them.
+    final orientation = _orientation;
+    final turns = SignCamera.turnsFor[orientation] ?? 0;
+    for (var i = 0; i < turns; i++) {
       pts = [for (final (x, y, z) in pts) (1.0 - y, x, z)];
       final t = w;
       w = h;
@@ -269,7 +282,9 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     // upright, dy should be clearly negative and dx close to 0.
     final dx = pts[8].$1 - pts[0].$1;
     final dy = pts[8].$2 - pts[0].$2;
-    _debug = 'cadru ${_frameW}x$_frameH   vârf arătător - încheietură: '
+    _debug =
+        '${orientation.name} ${turns * 90}°  cadru ${_frameW}x$_frameH  '
+        'vârf arătător - încheietură: '
         'dx=${dx.toStringAsFixed(2)} dy=${dy.toStringAsFixed(2)}';
 
     _updateHold();
@@ -284,8 +299,8 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
       final now = DateTime.now();
       _holdStart ??= now;
       final held = now.difference(_holdStart!);
-      _holdProgress =
-          (held.inMilliseconds / widget.holdTime.inMilliseconds).clamp(0, 1);
+      _holdProgress = (held.inMilliseconds / widget.holdTime.inMilliseconds)
+          .clamp(0, 1);
       if (held >= widget.holdTime) {
         _succeeded = true;
         _holdProgress = 1;
@@ -306,13 +321,15 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     _lastUi = now;
     final classifier = _classifier;
     if (classifier != null) {
-      widget.onReading?.call(SignReading(
-        handVisible: handVisible,
-        label: _label,
-        confidence: _confidence,
-        probabilities: _smoothed ?? List.filled(classifier.labels.length, 0),
-        labels: classifier.labels,
-      ));
+      widget.onReading?.call(
+        SignReading(
+          handVisible: handVisible,
+          label: _label,
+          confidence: _confidence,
+          probabilities: _smoothed ?? List.filled(classifier.labels.length, 0),
+          labels: classifier.labels,
+        ),
+      );
     }
     if (mounted) setState(() {});
   }
@@ -321,7 +338,6 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
   void dispose() {
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
-    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _stop();
     super.dispose();
   }
@@ -400,10 +416,14 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
           children: [
             OutlinedButton(
               onPressed: () => setState(() {
-                SignCamera.rotation = (SignCamera.rotation + 1) % 4;
+                final o = _orientation;
+                SignCamera.turnsFor[o] =
+                    ((SignCamera.turnsFor[o] ?? 0) + 1) % 4;
                 _smoothed = null;
               }),
-              child: Text('Rotire ${SignCamera.rotation * 90}°'),
+              child: Text(
+                'Rotire ${(SignCamera.turnsFor[_orientation] ?? 0) * 90}°',
+              ),
             ),
             OutlinedButton(
               onPressed: () => setState(() {
@@ -440,21 +460,17 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
       view = Center(
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
-          child: AspectRatio(
-            // The preview is shown upright (portrait), so width/height swap.
-            aspectRatio: 1 / controller.value.aspectRatio,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                CameraPreview(controller),
-                Positioned(
-                  left: 12,
-                  right: 12,
-                  bottom: 12,
-                  child: Center(child: _overlay()),
-                ),
-              ],
-            ),
+          // CameraPreview sizes itself for portrait or landscape.
+          child: Stack(
+            children: [
+              CameraPreview(controller),
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: Center(child: _overlay()),
+              ),
+            ],
           ),
         ),
       );
