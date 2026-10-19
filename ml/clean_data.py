@@ -11,8 +11,13 @@ DROP = [
     # sign 3 and 4: takes with the wrong shape
     ("3", 1792257288), ("3", 1792257475),
     ("4", 1792257298),
+        ("3", 1792349490),   # new sign 3 take: ring finger up, thumb folded
+    ("1", 1792257667),   # sign 1 take with the thumb out
+        ("3", 1792350745),
+            ("3", 1792257279), ("3", 1792257465), ("3", 1792257469),
+    ("3", 1792257471), ("3", 1792257678), ("3", 1792257679),
 ]
-
+  
 mask = pd.Series(False, index=df.index)
 for label, take in DROP:
     mask |= (df["label"] == label) & (df["take"] == take)

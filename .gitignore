@@ -10,5 +10,10 @@ ml/.venv/
 # Firebase CLI log
 firebase-debug.log
 
+signLearn/
+doc/Cristina_Dumitru_CNIV_Final.doc
 # Word and Excel temp files
 ~$*
+all_code.txt
+.vscode/
+.venv*/
