@@ -18,9 +18,9 @@ class _AndroidHandTracker implements HandTracker {
 
   @override
   Stream<Landmarks?> get hands => _plugin.landmarkStream.map((hands) {
-        if (hands.isEmpty || hands.first.landmarks.length != 21) return null;
-        return [for (final l in hands.first.landmarks) (l.x, l.y, l.z)];
-      });
+    if (hands.isEmpty || hands.first.landmarks.length != 21) return null;
+    return [for (final l in hands.first.landmarks) (l.x, l.y, l.z)];
+  });
 
   @override
   void processFrame(CameraImage image, int sensorOrientation) {

@@ -7,20 +7,19 @@ const kInk = Color(0xFF12304D);
 
 ThemeData buildTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(
-    seedColor: kBlue,
-    brightness: brightness,
-  ).copyWith(
-    primary: dark ? const Color(0xFF8CC2F0) : kBlue,
-    secondary: kCoral,
-    onSurface: dark ? const Color(0xFFE8F1FA) : kInk,
-  );
+  final scheme = ColorScheme.fromSeed(seedColor: kBlue, brightness: brightness)
+      .copyWith(
+        primary: dark ? const Color(0xFF8CC2F0) : kBlue,
+        secondary: kCoral,
+        onSurface: dark ? const Color(0xFFE8F1FA) : kInk,
+      );
 
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
-    scaffoldBackgroundColor:
-        dark ? const Color(0xFF0B1A2B) : const Color(0xFFEAF4FB),
+    scaffoldBackgroundColor: dark
+        ? const Color(0xFF0B1A2B)
+        : const Color(0xFFEAF4FB),
     cardTheme: CardThemeData(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),

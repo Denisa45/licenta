@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n.dart';
+import '../widgets/language_button.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -10,16 +13,25 @@ class LoginScreen extends StatefulWidget {
 }
 
 String _authError(FirebaseAuthException e) => switch (e.code) {
-      'invalid-credential' ||
-      'wrong-password' ||
-      'user-not-found' =>
-        'Email sau parolă greșită.',
-      'email-already-in-use' => 'Există deja un cont cu acest email.',
-      'weak-password' => 'Parola trebuie să aibă minimum 6 caractere.',
-      'invalid-email' => 'Email invalid.',
-      'network-request-failed' => 'Nu există conexiune la internet.',
-      _ => e.message ?? e.code,
-    };
+  'invalid-credential' || 'wrong-password' || 'user-not-found' => tr(
+    'Email sau parolă greșită.',
+    'Wrong email or password.',
+  ),
+  'email-already-in-use' => tr(
+    'Există deja un cont cu acest email.',
+    'An account with this email already exists.',
+  ),
+  'weak-password' => tr(
+    'Parola trebuie să aibă minimum 6 caractere.',
+    'The password needs at least 6 characters.',
+  ),
+  'invalid-email' => tr('Email invalid.', 'Invalid email.'),
+  'network-request-failed' => tr(
+    'Nu există conexiune la internet.',
+    'No internet connection.',
+  ),
+  _ => e.message ?? e.code,
+};
 
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
@@ -76,6 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(actions: const [LanguageButton()]),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -85,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Mână în mână',
+                  tr('Mână în mână', 'Hand in Hand'),
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 24),
@@ -101,8 +114,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextField(
                   controller: _password,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Parolă (minimum 6 caractere)',
+                  decoration: InputDecoration(
+                    labelText: tr(
+                      'Parolă (minimum 6 caractere)',
+                      'Password (at least 6 characters)',
+                    ),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -127,12 +143,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Intră în cont'),
+                        : Text(tr('Intră în cont', 'Sign in')),
                   ),
                 ),
                 TextButton(
                   onPressed: _busy ? null : _register,
-                  child: const Text('Creează cont nou'),
+                  child: Text(tr('Creează cont nou', 'Create account')),
                 ),
               ],
             ),

@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
+import '../widgets/language_button.dart';
 import '../widgets/sign_camera.dart';
+import '../l10n.dart';
 
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({super.key});
@@ -40,7 +42,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
       step: 'practice',
     );
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Bravo! Semnul ${target.name} a fost recunoscut.')),
+      SnackBar(
+        content: Text(
+          tr(
+            'Bravo! Semnul ${target.name} a fost recunoscut.',
+            'Well done! Sign ${target.name} was recognized.',
+          ),
+        ),
+      ),
     );
   }
 
@@ -50,7 +59,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final text = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Exersare')),
+      appBar: AppBar(
+        title: Text(tr('Exersare', 'Practice')),
+        actions: const [LanguageButton()],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -65,7 +77,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     alignment: WrapAlignment.center,
                     children: [
                       ChoiceChip(
-                        label: const Text('Liber'),
+                        label: Text(tr('Liber', 'Free')),
                         selected: _target == null,
                         onSelected: (_) => setState(() => _target = null),
                       ),
@@ -93,8 +105,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
               else
                 Text(
                   _target == null
-                      ? 'Fă orice semn de la 1 la 5.'
-                      : 'Fă semnul ${_target!.name} și ține-l o secundă.',
+                      ? tr(
+                          'Fă orice semn de la 1 la 5.',
+                          'Show any sign from 1 to 5.',
+                        )
+                      : tr(
+                          'Fă semnul ${_target!.name} și ține-l o secundă.',
+                          'Show sign ${_target!.name} and hold it for a second.',
+                        ),
                   style: text.titleMedium,
                   textAlign: TextAlign.center,
                 ),

@@ -34,14 +34,14 @@ class SignProgress {
   bool get completed => status == 'completed';
 
   factory SignProgress.fromMap(Map<String, dynamic> d) => SignProgress(
-        signId: (d['sign_id'] ?? '').toString(),
-        status: (d['status'] ?? 'in_progress').toString(),
-        attempts: (d['attempts'] as num?)?.toInt() ?? 0,
-        bestConfidence: (d['best_confidence'] as num?)?.toDouble() ?? 0,
-        quizScore: (d['quiz_score'] as num?)?.toInt() ?? 0,
-        quizTotal: (d['quiz_total'] as num?)?.toInt() ?? 0,
-        completedAt: (d['completed_at'] as Timestamp?)?.toDate(),
-      );
+    signId: (d['sign_id'] ?? '').toString(),
+    status: (d['status'] ?? 'in_progress').toString(),
+    attempts: (d['attempts'] as num?)?.toInt() ?? 0,
+    bestConfidence: (d['best_confidence'] as num?)?.toDouble() ?? 0,
+    quizScore: (d['quiz_score'] as num?)?.toInt() ?? 0,
+    quizTotal: (d['quiz_total'] as num?)?.toInt() ?? 0,
+    completedAt: (d['completed_at'] as Timestamp?)?.toDate(),
+  );
 }
 
 class ProgressService {
@@ -63,11 +63,14 @@ class ProgressService {
         .collection('progress')
         .where('uid', isEqualTo: uid)
         .snapshots()
-        .map((snap) => {
-              for (final d in snap.docs)
-                (d.data()['sign_id'] ?? '').toString():
-                    SignProgress.fromMap(d.data()),
-            });
+        .map(
+          (snap) => {
+            for (final d in snap.docs)
+              (d.data()['sign_id'] ?? '').toString(): SignProgress.fromMap(
+                d.data(),
+              ),
+          },
+        );
   }
 
   /// Saves one camera attempt and counts it on the lesson.

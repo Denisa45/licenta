@@ -17,6 +17,7 @@ import '../models/sign.dart';
 import '../services/progress_service.dart';
 import '../widgets/sign_camera.dart';
 import '../widgets/sign_widgets.dart';
+import '../l10n.dart';
 
 enum _Step { learn, attempt, quiz, done }
 
@@ -137,11 +138,16 @@ class _LessonScreenState extends State<LessonScreen> {
     for (final f in kFingers) {
       final want = (sign.robotPose[f] ?? 0) == 1;
       final has = (seen.robotPose[f] ?? 0) == 1;
-      if (want && !has) tips.add('ridică ${kFingerNames[f]}');
-      if (!want && has) tips.add('îndoaie ${kFingerNames[f]}');
+      final name = fingerName(f);
+      if (want && !has) tips.add(tr('ridică $name', 'raise the $name'));
+      if (!want && has) tips.add(tr('îndoaie $name', 'bend the $name'));
     }
     if (tips.isEmpty) return null;
-    return 'Camera vede semnul ${r.label}. Încearcă să ${tips.join(' și ')}.';
+    final list = tips.join(tr(' și ', ' and '));
+    return tr(
+      'Camera vede semnul ${r.label}: $list.',
+      'The camera sees sign ${r.label}: $list.',
+    );
   }
 
   // ---------------------------------------------------------------- Verifică
@@ -151,12 +157,16 @@ class _LessonScreenState extends State<LessonScreen> {
     final others = widget.allSigns.where((s) => s.id != sign.id).toList()
       ..shuffle(rnd);
 
-    _Question single(String prompt, String answer, List<String> wrong,
-        {Widget? visual}) {
-      final options = {answer, ...wrong.where((w) => w.isNotEmpty)}
-          .take(3)
-          .toList()
-        ..shuffle(rnd);
+    _Question single(
+      String prompt,
+      String answer,
+      List<String> wrong, {
+      Widget? visual,
+    }) {
+      final options = {
+        answer,
+        ...wrong.where((w) => w.isNotEmpty),
+      }.take(3).toList()..shuffle(rnd);
       return _Question(
         prompt: prompt,
         visual: visual,
@@ -167,24 +177,33 @@ class _LessonScreenState extends State<LessonScreen> {
 
     return [
       single(
-        'Ce număr arată această mână?',
+        tr('Ce număr arată această mână?', 'Which number does this hand show?'),
         sign.name,
         [for (final s in others) s.name],
         visual: HandPoseView(pose: sign.robotPose, height: 160),
       ),
       // Descriptions only work as answers when they exist and differ;
       // otherwise ask which sign has these fingers up.
-      if (sign.description.isNotEmpty &&
-          others.any((s) =>
-              s.description.isNotEmpty && s.description != sign.description))
+      if (sign.localDescription.isNotEmpty &&
+          others.any(
+            (s) =>
+                s.localDescription.isNotEmpty &&
+                s.localDescription != sign.localDescription,
+          ))
         single(
-          'Care descriere se potrivește semnului ${sign.name}?',
-          sign.description,
-          [for (final s in others) s.description],
+          tr(
+            'Care descriere se potrivește semnului ${sign.name}?',
+            'Which description matches sign ${sign.name}?',
+          ),
+          sign.localDescription,
+          [for (final s in others) s.localDescription],
         )
       else
         single(
-          'Care semn se face ridicând ${sign.raisedFingersText}?',
+          tr(
+            'Care semn se face ridicând ${sign.raisedFingersText}?',
+            'Which sign is made by raising the ${sign.raisedFingersText}?',
+          ),
           sign.name,
           [
             for (final s in others)
@@ -192,9 +211,15 @@ class _LessonScreenState extends State<LessonScreen> {
           ],
         ),
       _Question(
-        prompt: 'Ce degete sunt ridicate la semnul ${sign.name}?',
-        hint: 'Alege toate degetele ridicate.',
-        options: [for (final f in kFingers) kFingerNames[f]!],
+        prompt: tr(
+          'Ce degete sunt ridicate la semnul ${sign.name}?',
+          'Which fingers are up in sign ${sign.name}?',
+        ),
+        hint: tr(
+          'Alege toate degetele ridicate.',
+          'Choose all the raised fingers.',
+        ),
+        options: [for (final f in kFingers) fingerName(f)],
         correct: {
           for (var i = 0; i < kFingers.length; i++)
             if (sign.raisedFingers.contains(kFingers[i])) i,
@@ -219,30 +244,30 @@ class _LessonScreenState extends State<LessonScreen> {
   // ---------------------------------------------------------------- UI
 
   double get _lessonProgress => switch (_step) {
-        _Step.learn => 0.1,
-        _Step.attempt => 0.4,
-        _Step.quiz => 0.6 + 0.4 * _questionIndex / _questions.length,
-        _Step.done => 1,
-      };
+    _Step.learn => 0.1,
+    _Step.attempt => 0.4,
+    _Step.quiz => 0.6 + 0.4 * _questionIndex / _questions.length,
+    _Step.done => 1,
+  };
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final title = switch (_step) {
-      _Step.learn => 'Învață',
-      _Step.attempt => 'Încearcă',
-      _Step.quiz => 'Verifică',
-      _Step.done => 'Gata!',
+      _Step.learn => tr('Învață', 'Learn'),
+      _Step.attempt => tr('Încearcă', 'Try'),
+      _Step.quiz => tr('Verifică', 'Check'),
+      _Step.done => tr('Gata!', 'Done!'),
     };
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
-          tooltip: 'Închide lecția',
+          tooltip: tr('Închide lecția', 'Close the lesson'),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Semnul ${sign.name} · $title'),
+        title: Text('${tr('Semnul', 'Sign')} ${sign.name} · $title'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(10),
           child: Padding(
@@ -272,13 +297,13 @@ class _LessonScreenState extends State<LessonScreen> {
                 _Step.learn => _learnStep(context),
                 _Step.attempt => _attemptStep(context),
                 _Step.quiz => _QuestionView(
-                    key: ValueKey(_questionIndex),
-                    question: _questions[_questionIndex],
-                    number: _questionIndex + 1,
-                    total: _questions.length,
-                    onAnswered: _onAnswered,
-                    onNext: _nextQuestion,
-                  ),
+                  key: ValueKey(_questionIndex),
+                  question: _questions[_questionIndex],
+                  number: _questionIndex + 1,
+                  total: _questions.length,
+                  onAnswered: _onAnswered,
+                  onNext: _nextQuestion,
+                ),
                 _Step.done => _doneStep(context),
               },
             ),
@@ -291,7 +316,7 @@ class _LessonScreenState extends State<LessonScreen> {
   Widget _learnStep(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final fingers = [for (final f in sign.raisedFingers) kFingerNames[f]!];
+    final fingers = [for (final f in sign.raisedFingers) fingerName(f)];
     return Column(
       children: [
         Expanded(
@@ -315,9 +340,10 @@ class _LessonScreenState extends State<LessonScreen> {
                       Row(
                         children: [
                           Text(
-                            'Semnul ${sign.name}',
-                            style: text.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w800),
+                            '${tr('Semnul', 'Sign')} ${sign.name}',
+                            style: text.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const Spacer(),
                           DifficultyDots(level: sign.difficulty),
@@ -328,7 +354,7 @@ class _LessonScreenState extends State<LessonScreen> {
                       if (fingers.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Text(
-                          'Degete ridicate: ${fingers.join(', ')}.',
+                          '${tr('Degete ridicate', 'Raised fingers')}: ${fingers.join(', ')}.',
                           style: text.bodyLarge?.copyWith(
                             color: cs.primary,
                             fontWeight: FontWeight.w700,
@@ -345,7 +371,7 @@ class _LessonScreenState extends State<LessonScreen> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: () => _goTo(_Step.attempt),
-          child: const Text('AM ÎNȚELES, ÎNCERC'),
+          child: Text(tr('AM ÎNȚELES, ÎNCERC', "GOT IT, LET'S TRY")),
         ),
       ],
     );
@@ -355,14 +381,20 @@ class _LessonScreenState extends State<LessonScreen> {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final feedback = _fingerFeedback();
-    final fingers = [for (final f in sign.raisedFingers) kFingerNames[f]!];
+    final fingers = [for (final f in sign.raisedFingers) fingerName(f)];
 
     return Column(
       children: [
         Text(
           _recognized
-              ? 'Bravo! Am recunoscut semnul ${sign.name}.'
-              : 'Fă semnul ${sign.name} în fața camerei și ține-l o secundă.',
+              ? tr(
+                  'Bravo! Am recunoscut semnul ${sign.name}.',
+                  'Well done! Sign ${sign.name} was recognized.',
+                )
+              : tr(
+                  'Fă semnul ${sign.name} în fața camerei și ține-l o secundă.',
+                  'Show sign ${sign.name} to the camera and hold it for a second.',
+                ),
           style: text.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
             color: _recognized ? cs.primary : null,
@@ -385,8 +417,12 @@ class _LessonScreenState extends State<LessonScreen> {
               padding: const EdgeInsets.all(14),
               child: Text(
                 feedback ??
-                    'Sfat: ridică doar ${fingers.join(', ')}, cu palma spre '
-                        'cameră, la o jumătate de metru de tabletă.',
+                    tr(
+                      'Sfat: ridică doar ${fingers.join(', ')}, cu palma spre '
+                          'cameră, la o jumătate de metru de tabletă.',
+                      'Tip: raise only the ${fingers.join(', ')}, palm towards '
+                          'the camera, about half a metre from the tablet.',
+                    ),
                 style: TextStyle(color: cs.onSecondaryContainer),
                 textAlign: TextAlign.center,
               ),
@@ -396,7 +432,7 @@ class _LessonScreenState extends State<LessonScreen> {
         const SizedBox(height: 12),
         FilledButton(
           onPressed: _recognized ? () => _goTo(_Step.quiz) : null,
-          child: const Text('CONTINUĂ'),
+          child: Text(tr('CONTINUĂ', 'CONTINUE')),
         ),
         if (kDebugMode && !_recognized)
           TextButton(
@@ -404,7 +440,12 @@ class _LessonScreenState extends State<LessonScreen> {
               _onRecognized(source: 'debug_skip');
               _goTo(_Step.quiz);
             },
-            child: const Text('Sari peste camera (doar debug)'),
+            child: Text(
+              tr(
+                'Sari peste camera (doar debug)',
+                'Skip the camera (debug only)',
+              ),
+            ),
           ),
       ],
     );
@@ -421,30 +462,41 @@ class _LessonScreenState extends State<LessonScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.emoji_events_outlined, size: 80, color: cs.secondary),
+                Icon(
+                  Icons.emoji_events_outlined,
+                  size: 80,
+                  color: cs.secondary,
+                ),
                 const SizedBox(height: 12),
                 Text(
-                  'Lecție terminată!',
-                  style:
-                      text.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                  tr('Lecție terminată!', 'Lesson complete!'),
+                  style: text.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Răspunsuri corecte: $_score din ${_questions.length}',
+                  tr(
+                    'Răspunsuri corecte: $_score din ${_questions.length}',
+                    'Correct answers: $_score of ${_questions.length}',
+                  ),
                   style: text.titleMedium,
                 ),
                 if (_bestConfidence > 0) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Recunoaștere cameră: ${(_bestConfidence * 100).round()}%',
+                    '${tr('Recunoaștere cameră', 'Camera recognition')}: '
+                    '${(_bestConfidence * 100).round()}%',
                     style: text.titleMedium,
                   ),
                 ],
-                if (next != null &&
-                    widget.previous?.completed != true) ...[
+                if (next != null && widget.previous?.completed != true) ...[
                   const SizedBox(height: 20),
                   Text(
-                    'Ai deblocat semnul ${next.name}.',
+                    tr(
+                      'Ai deblocat semnul ${next.name}.',
+                      'You unlocked sign ${next.name}.',
+                    ),
                     style: text.titleMedium?.copyWith(
                       color: cs.primary,
                       fontWeight: FontWeight.w800,
@@ -457,7 +509,7 @@ class _LessonScreenState extends State<LessonScreen> {
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('ÎNAPOI LA DRUMUL MEU'),
+          child: Text(tr('ÎNAPOI LA DRUMUL MEU', 'BACK TO MY PATH')),
         ),
       ],
     );
@@ -522,7 +574,8 @@ class _QuestionViewState extends State<_QuestionView> {
   }
 
   void _check() {
-    final ok = _selected.length == q.correct.length &&
+    final ok =
+        _selected.length == q.correct.length &&
         _selected.containsAll(q.correct);
     setState(() => _correct = ok);
     widget.onAnswered(ok);
@@ -541,14 +594,19 @@ class _QuestionViewState extends State<_QuestionView> {
           child: ListView(
             children: [
               Text(
-                'Întrebarea ${widget.number} din ${widget.total}',
+                tr(
+                  'Întrebarea ${widget.number} din ${widget.total}',
+                  'Question ${widget.number} of ${widget.total}',
+                ),
                 style: text.labelLarge?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 q.prompt,
-                style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                style: text.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
                 textAlign: TextAlign.center,
               ),
               if (q.hint != null) ...[
@@ -587,12 +645,18 @@ class _QuestionViewState extends State<_QuestionView> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: (_correct! ? cs.primary : cs.secondary)
-                  .withValues(alpha: 0.15),
+              color: (_correct! ? cs.primary : cs.secondary).withValues(
+                alpha: 0.15,
+              ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              _correct! ? 'Corect!' : 'Aproape! Răspunsul corect: $answer.',
+              _correct!
+                  ? tr('Corect!', 'Correct!')
+                  : tr(
+                      'Aproape! Răspunsul corect: $answer.',
+                      'Almost! The right answer: $answer.',
+                    ),
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 16,
@@ -604,9 +668,11 @@ class _QuestionViewState extends State<_QuestionView> {
           onPressed: checked
               ? widget.onNext
               : _selected.isEmpty
-                  ? null
-                  : _check,
-          child: Text(checked ? 'CONTINUĂ' : 'VERIFICĂ'),
+              ? null
+              : _check,
+          child: Text(
+            checked ? tr('CONTINUĂ', 'CONTINUE') : tr('VERIFICĂ', 'CHECK'),
+          ),
         ),
       ],
     );
@@ -634,8 +700,8 @@ class _OptionTile extends StatelessWidget {
     final border = highlight
         ? cs.primary
         : selected
-            ? cs.secondary
-            : cs.outlineVariant;
+        ? cs.secondary
+        : cs.outlineVariant;
     return Material(
       color: selected ? cs.secondary.withValues(alpha: 0.12) : cs.surface,
       shape: RoundedRectangleBorder(
@@ -651,17 +717,22 @@ class _OptionTile extends StatelessWidget {
             children: [
               Icon(
                 multi
-                    ? (selected ? Icons.check_box : Icons.check_box_outline_blank)
+                    ? (selected
+                          ? Icons.check_box
+                          : Icons.check_box_outline_blank)
                     : (selected
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked),
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked),
                 color: selected ? cs.secondary : cs.onSurfaceVariant,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               if (highlight) Icon(Icons.check_circle, color: cs.primary),

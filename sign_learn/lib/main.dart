@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
+import 'l10n.dart';
 import 'screens/login_screen.dart';
 import 'screens/path_screen.dart';
 import 'screens/practice_screen.dart';
@@ -12,6 +13,7 @@ import 'theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await loadLanguage();
   runApp(const SignLearnApp());
 }
 
@@ -20,12 +22,17 @@ class SignLearnApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mână în mână',
-      debugShowCheckedModeBanner: false,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      home: const AuthGate(),
+    // Keyed by the language: switching it rebuilds every screen with new texts.
+    return ValueListenableBuilder<AppLang>(
+      valueListenable: appLang,
+      builder: (context, lang, _) => MaterialApp(
+        key: ValueKey(lang),
+        title: tr('Mână în mână', 'Hand in Hand'),
+        debugShowCheckedModeBanner: false,
+        theme: buildTheme(Brightness.light),
+        darkTheme: buildTheme(Brightness.dark),
+        home: const AuthGate(),
+      ),
     );
   }
 }
@@ -44,7 +51,9 @@ class AuthGate extends StatelessWidget {
           );
         }
         // Keyed by uid so the screens reload their data after a new sign-in.
-        if (snapshot.hasData) return HomeShell(key: ValueKey(snapshot.data!.uid));
+        if (snapshot.hasData) {
+          return HomeShell(key: ValueKey(snapshot.data!.uid));
+        }
         return const LoginScreen();
       },
     );
@@ -75,14 +84,20 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.route), label: 'Drumul meu'),
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.back_hand_outlined),
-            selectedIcon: Icon(Icons.back_hand),
-            label: 'Exersare',
+            icon: const Icon(Icons.route),
+            label: tr('Drumul meu', 'My path'),
           ),
-          NavigationDestination(icon: Icon(Icons.insights), label: 'Progres'),
+          NavigationDestination(
+            icon: const Icon(Icons.back_hand_outlined),
+            selectedIcon: const Icon(Icons.back_hand),
+            label: tr('Exersare', 'Practice'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.insights),
+            label: tr('Progres', 'Progress'),
+          ),
         ],
       ),
     );

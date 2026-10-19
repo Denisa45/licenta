@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 
 import '../sign_classifier.dart';
 import '../vision/hand_tracker.dart';
+import '../l10n.dart';
 
 /// One smoothed result from the camera.
 class SignReading {
@@ -156,7 +157,11 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
         tracker.dispose();
-        if (mounted) setState(() => _error = 'Nu am găsit nicio cameră.');
+        if (mounted) {
+          setState(
+            () => _error = tr('Nu am găsit nicio cameră.', 'No camera found.'),
+          );
+        }
         return;
       }
       final camera = cameras.firstWhere(
@@ -367,8 +372,8 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     final target = widget.target;
     final matching = target != null && _label == target && _handVisible;
     final text = !_handVisible
-        ? 'Arată mâna în fața camerei'
-        : 'Semnul $_label · ${(_confidence * 100).round()}%';
+        ? tr('Arată mâna în fața camerei', 'Show your hand to the camera')
+        : '${tr('Semnul', 'Sign')} $_label · ${(_confidence * 100).round()}%';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
@@ -449,10 +454,16 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     if (_unsupported) {
       view = _message(
         Icons.tablet_android,
-        'Camera și recunoașterea mâinii funcționează doar pe tableta Android.',
+        tr(
+          'Camera și recunoașterea mâinii funcționează doar pe tableta Android.',
+          'The camera and hand tracking only work on the Android tablet.',
+        ),
       );
     } else if (_error != null) {
-      view = _message(Icons.error_outline, 'Eroare cameră: $_error');
+      view = _message(
+        Icons.error_outline,
+        '${tr('Eroare cameră', 'Camera error')}: $_error',
+      );
     } else if (controller == null || !controller.value.isInitialized) {
       view = const Center(child: CircularProgressIndicator());
     } else {

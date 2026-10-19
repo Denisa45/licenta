@@ -20,7 +20,8 @@ class SignPrediction {
   const SignPrediction(this.label, this.confidence, this.probabilities);
 
   @override
-  String toString() => 'sign $label (${(confidence * 100).toStringAsFixed(0)}%)';
+  String toString() =>
+      'sign $label (${(confidence * 100).toStringAsFixed(0)}%)';
 }
 
 class _Dense {
@@ -36,10 +37,18 @@ class SignClassifier {
   final List<double>? _testInput;
   final List<double>? _testOutput;
 
-  SignClassifier._(this.labels, this._layers, this._testInput, this._testOutput);
+  SignClassifier._(
+    this.labels,
+    this._layers,
+    this._testInput,
+    this._testOutput,
+  );
 
-  static Future<SignClassifier> load([String asset = 'assets/sign_model.json']) async {
-    final data = jsonDecode(await rootBundle.loadString(asset)) as Map<String, dynamic>;
+  static Future<SignClassifier> load([
+    String asset = 'assets/sign_model.json',
+  ]) async {
+    final data =
+        jsonDecode(await rootBundle.loadString(asset)) as Map<String, dynamic>;
 
     List<double> doubles(dynamic list) =>
         (list as List).map((v) => (v as num).toDouble()).toList();

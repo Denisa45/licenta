@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
+import '../widgets/language_button.dart';
+import '../l10n.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -32,12 +34,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Progres')),
+      appBar: AppBar(
+        title: Text(tr('Progres', 'Progress')),
+        actions: const [LanguageButton()],
+      ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _signsStream,
         builder: (context, signSnap) {
           if (signSnap.hasError) {
-            return Center(child: Text('Eroare: ${signSnap.error}'));
+            return Center(
+              child: Text('${tr('Eroare', 'Error')}: ${signSnap.error}'),
+            );
           }
           if (!signSnap.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -51,14 +58,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 builder: (context, sessSnap) {
                   final error = progSnap.error ?? sessSnap.error;
                   if (error != null) {
-                    return Center(child: Text('Eroare: $error'));
+                    return Center(
+                      child: Text('${tr('Eroare', 'Error')}: $error'),
+                    );
                   }
                   return _ProgressBody(
                     signs: signs,
                     progress: progSnap.data ?? const {},
                     sessions: [
-                      for (final d in sessSnap.data?.docs ?? const [])
-                        d.data(),
+                      for (final d in sessSnap.data?.docs ?? const []) d.data(),
                     ],
                   );
                 },
@@ -87,8 +95,9 @@ class _ProgressBody extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
 
-    final completed =
-        signs.where((s) => progress[s.id]?.completed ?? false).length;
+    final completed = signs
+        .where((s) => progress[s.id]?.completed ?? false)
+        .length;
     var quizScore = 0, quizTotal = 0;
     for (final p in progress.values) {
       quizScore += p.quizScore;
@@ -97,7 +106,8 @@ class _ProgressBody extends StatelessWidget {
     final camera = sessions.where((s) => s['source'] != 'debug_skip').toList();
     final successes = camera.where((s) => s['success'] == true).length;
 
-    final recent = [...camera]..sort((a, b) {
+    final recent = [...camera]
+      ..sort((a, b) {
         final ta = a['timestamp'] as Timestamp?;
         final tb = b['timestamp'] as Timestamp?;
         if (ta == null || tb == null) return ta == null ? -1 : 1;
@@ -119,16 +129,22 @@ class _ProgressBody extends StatelessWidget {
               crossAxisSpacing: 12,
               childAspectRatio: 1.6,
               children: [
-                _StatCard(label: 'Lecții terminate', value: '$completed / ${signs.length}'),
                 _StatCard(
-                  label: 'Răspunsuri corecte',
+                  label: tr('Lecții terminate', 'Lessons completed'),
+                  value: '$completed / ${signs.length}',
+                ),
+                _StatCard(
+                  label: tr('Răspunsuri corecte', 'Correct answers'),
                   value: quizTotal == 0
                       ? '-'
                       : '${(100 * quizScore / quizTotal).round()}%',
                 ),
-                _StatCard(label: 'Încercări cu camera', value: '${camera.length}'),
                 _StatCard(
-                  label: 'Reușite',
+                  label: tr('Încercări cu camera', 'Camera attempts'),
+                  value: '${camera.length}',
+                ),
+                _StatCard(
+                  label: tr('Reușite', 'Successful'),
                   value: camera.isEmpty
                       ? '-'
                       : '${(100 * successes / camera.length).round()}%',
@@ -136,15 +152,21 @@ class _ProgressBody extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            Text('Pe semne', style: text.titleLarge),
+            Text(tr('Pe semne', 'By sign'), style: text.titleLarge),
             const SizedBox(height: 8),
             for (final s in signs) _SignRow(sign: s, progress: progress[s.id]),
             const SizedBox(height: 20),
-            Text('Ultimele încercări', style: text.titleLarge),
+            Text(
+              tr('Ultimele încercări', 'Latest attempts'),
+              style: text.titleLarge,
+            ),
             const SizedBox(height: 8),
             if (recent.isEmpty)
               Text(
-                'Încă nu ai încercat niciun semn cu camera.',
+                tr(
+                  'Încă nu ai încercat niciun semn cu camera.',
+                  'You have not tried any sign with the camera yet.',
+                ),
                 style: TextStyle(color: cs.onSurfaceVariant),
               ),
             for (final s in recent.take(10))
@@ -226,27 +248,36 @@ class _SignRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final p = progress;
     final status = p == null
-        ? 'Neînceput'
+        ? tr('Neînceput', 'Not started')
         : p.completed
-            ? 'Terminat'
-            : 'În lucru';
+        ? tr('Terminat', 'Completed')
+        : tr('În lucru', 'In progress');
     final details = [
       if (p != null && p.quizTotal > 0) 'quiz ${p.quizScore}/${p.quizTotal}',
       if (p != null && p.bestConfidence > 0)
-        'cameră ${(p.bestConfidence * 100).round()}%',
-      if (p != null && p.attempts > 0) '${p.attempts} încercări',
+        '${tr('cameră', 'camera')} ${(p.bestConfidence * 100).round()}%',
+      if (p != null && p.attempts > 0)
+        '${p.attempts} ${tr('încercări', 'attempts')}',
     ].join(' · ');
     return Card(
       color: cs.surface,
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor:
-              p?.completed == true ? cs.primary : cs.surfaceContainerHighest,
-          foregroundColor:
-              p?.completed == true ? cs.onPrimary : cs.onSurfaceVariant,
-          child: Text(sign.name, style: const TextStyle(fontWeight: FontWeight.w800)),
+          backgroundColor: p?.completed == true
+              ? cs.primary
+              : cs.surfaceContainerHighest,
+          foregroundColor: p?.completed == true
+              ? cs.onPrimary
+              : cs.onSurfaceVariant,
+          child: Text(
+            sign.name,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
         ),
-        title: Text(status, style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(
+          status,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
         subtitle: details.isEmpty ? null : Text(details),
       ),
     );

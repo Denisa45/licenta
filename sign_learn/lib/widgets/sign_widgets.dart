@@ -88,7 +88,9 @@ class DifficultyDots extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 2),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: i <= level ? cs.primary : cs.primary.withValues(alpha: 0.25),
+              color: i <= level
+                  ? cs.primary
+                  : cs.primary.withValues(alpha: 0.25),
             ),
           ),
       ],

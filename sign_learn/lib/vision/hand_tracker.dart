@@ -8,7 +8,8 @@
 import 'package:camera/camera.dart';
 
 import 'hand_tracker_stub.dart'
-    if (dart.library.ffi) 'hand_tracker_android.dart' as impl;
+    if (dart.library.ffi) 'hand_tracker_android.dart'
+    as impl;
 
 /// 21 MediaPipe landmarks as (x, y, z), x and y as 0..1 fractions of the frame.
 typedef Landmarks = List<(double, double, double)>;

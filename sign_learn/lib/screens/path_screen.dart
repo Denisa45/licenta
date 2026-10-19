@@ -10,12 +10,14 @@ import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
+import '../widgets/language_button.dart';
 import '../widgets/sign_widgets.dart';
 import 'lesson_screen.dart';
+import '../l10n.dart';
 
 String unitTitle(String unit) {
   final m = RegExp(r'^unit(\d+)$', caseSensitive: false).firstMatch(unit);
-  return m != null ? 'Unitatea ${m.group(1)}' : unit;
+  return m != null ? '${tr('Unitatea', 'Unit')} ${m.group(1)}' : unit;
 }
 
 enum LessonState { locked, open, completed }
@@ -39,11 +41,12 @@ class _PathScreenState extends State<PathScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Drumul meu'),
+        title: Text(tr('Drumul meu', 'My path')),
         actions: [
+          const LanguageButton(),
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'Ieșire',
+            tooltip: tr('Ieșire', 'Sign out'),
             onPressed: () => FirebaseAuth.instance.signOut(),
           ),
         ],
@@ -52,7 +55,9 @@ class _PathScreenState extends State<PathScreen> {
         stream: _signsStream,
         builder: (context, signSnap) {
           if (signSnap.hasError) {
-            return Center(child: Text('Eroare: ${signSnap.error}'));
+            return Center(
+              child: Text('${tr('Eroare', 'Error')}: ${signSnap.error}'),
+            );
           }
           if (!signSnap.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -63,7 +68,9 @@ class _PathScreenState extends State<PathScreen> {
             stream: _progressStream,
             builder: (context, progSnap) {
               if (progSnap.hasError) {
-                return Center(child: Text('Eroare: ${progSnap.error}'));
+                return Center(
+                  child: Text('${tr('Eroare', 'Error')}: ${progSnap.error}'),
+                );
               }
               final progress = progSnap.data ?? const {};
               return _PathList(signs: signs, progress: progress);
@@ -88,11 +95,13 @@ class _PathList extends StatelessWidget {
     var previousDone = true;
     for (final s in signs) {
       final done = progress[s.id]?.completed ?? false;
-      states.add(done
-          ? LessonState.completed
-          : previousDone
-              ? LessonState.open
-              : LessonState.locked);
+      states.add(
+        done
+            ? LessonState.completed
+            : previousDone
+            ? LessonState.open
+            : LessonState.locked,
+      );
       previousDone = done;
     }
     final completed = states.where((s) => s == LessonState.completed).length;
@@ -107,12 +116,14 @@ class _PathList extends StatelessWidget {
         unit = s.unit;
         children.add(_UnitBanner(title: unitTitle(s.unit)));
       }
-      children.add(_LessonTile(
-        sign: s,
-        state: states[i],
-        isLast: i == signs.length - 1 || signs[i + 1].unit != s.unit,
-        onTap: () => _open(context, i, states[i]),
-      ));
+      children.add(
+        _LessonTile(
+          sign: s,
+          state: states[i],
+          isLast: i == signs.length - 1 || signs[i + 1].unit != s.unit,
+          onTap: () => _open(context, i, states[i]),
+        ),
+      );
     }
 
     return Center(
@@ -128,11 +139,16 @@ class _PathList extends StatelessWidget {
 
   void _open(BuildContext context, int index, LessonState state) {
     if (state == LessonState.locked) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-          'Termină mai întâi lecția pentru semnul ${signs[index - 1].name}.',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tr(
+              'Termină mai întâi lecția pentru semnul ${signs[index - 1].name}.',
+              'First finish the lesson for sign ${signs[index - 1].name}.',
+            ),
+          ),
         ),
-      ));
+      );
       return;
     }
     Navigator.push(
@@ -169,8 +185,14 @@ class _ProgressHeader extends StatelessWidget {
           children: [
             Text(
               completed == total && total > 0
-                  ? 'Ai terminat toate lecțiile!'
-                  : 'Lecții terminate: $completed din $total',
+                  ? tr(
+                      'Ai terminat toate lecțiile!',
+                      'You finished all the lessons!',
+                    )
+                  : tr(
+                      'Lecții terminate: $completed din $total',
+                      'Lessons completed: $completed of $total',
+                    ),
               style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
@@ -240,13 +262,13 @@ class _LessonTile extends StatelessWidget {
     final circleColor = done
         ? cs.primary
         : locked
-            ? cs.surfaceContainerHighest
-            : cs.secondary;
+        ? cs.surfaceContainerHighest
+        : cs.secondary;
     final circleText = locked ? cs.onSurfaceVariant : Colors.white;
     final status = switch (state) {
-      LessonState.completed => 'Terminată',
-      LessonState.open => 'Începe lecția',
-      LessonState.locked => 'Blocată',
+      LessonState.completed => tr('Terminată', 'Completed'),
+      LessonState.open => tr('Începe lecția', 'Start the lesson'),
+      LessonState.locked => tr('Blocată', 'Locked'),
     };
 
     return IntrinsicHeight(
@@ -306,7 +328,7 @@ class _LessonTile extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Semnul ${sign.name}',
+                                '${tr('Semnul', 'Sign')} ${sign.name}',
                                 style: text.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: locked ? cs.onSurfaceVariant : null,
@@ -319,8 +341,8 @@ class _LessonTile extends StatelessWidget {
                                   color: done
                                       ? cs.primary
                                       : locked
-                                          ? cs.onSurfaceVariant
-                                          : cs.secondary,
+                                      ? cs.onSurfaceVariant
+                                      : cs.secondary,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
