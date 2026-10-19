@@ -10,7 +10,13 @@ Run from the same folder as train_model.py, with the venv active:
     python train_nn.py
 
 Output: data/sign_model.tflite, data/sign_model.keras, data/labels.txt
+
+    python train_nn.py --final
+first prints the same held-out evaluation, then trains the saved model again on
+ALL takes (more examples, especially for sign 3). Use it for the model in the app,
+and report the held-out numbers in the thesis.
 """
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -50,22 +56,25 @@ y_tr = train["label"].map(label_to_idx).values
 X_te = test[features].values.astype("float32")
 y_te = test["label"].map(label_to_idx).values
 
-# Signs with fewer training samples get a bigger weight
-counts = np.bincount(y_tr, minlength=n_classes)
-class_weight = {c: len(y_tr) / (n_classes * counts[c]) for c in range(n_classes)}
-
-model = tf.keras.Sequential([
-    tf.keras.layers.Input(shape=(n_features,)),
-    tf.keras.layers.Dense(64, activation="relu"),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(32, activation="relu"),
-    tf.keras.layers.Dense(n_classes, activation="softmax"),
-])
-model.compile(optimizer="adam",
+# Signs with fewer training samples get a bigger weight (see build_and_train).
+def build_and_train(X, y, verbose=2):
+    counts = np.bincount(y, minlength=n_classes)
+    weights = {c: len(y) / (n_classes * counts[c]) for c in range(n_classes)}
+    m = tf.keras.Sequential([
+        tf.keras.layers.Input(shape=(n_features,)),
+        tf.keras.layers.Dense(64, activation="relu"),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(32, activation="relu"),
+        tf.keras.layers.Dense(n_classes, activation="softmax"),
+    ])
+    m.compile(optimizer="adam",
               loss="sparse_categorical_crossentropy",
               metrics=["accuracy"])
-model.fit(X_tr, y_tr, epochs=EPOCHS, batch_size=32,
-          class_weight=class_weight, verbose=2)
+    m.fit(X, y, epochs=EPOCHS, batch_size=32, class_weight=weights, verbose=verbose)
+    return m
+
+
+model = build_and_train(X_tr, y_tr)
 
 pred = model.predict(X_te, verbose=0).argmax(axis=1)
 print(f"\nTest accuracy (held-out takes): {accuracy_score(y_te, pred):.3f}\n")
@@ -74,6 +83,12 @@ print(classification_report(y_te, pred, labels=list(range(n_classes)),
 print("Confusion matrix (rows = true sign, columns = predicted):")
 print(pd.DataFrame(confusion_matrix(y_te, pred, labels=list(range(n_classes))),
                    index=labels, columns=labels))
+
+if "--final" in sys.argv:
+    print("\n--final: training the saved model on all takes...")
+    X_all = df[features].values.astype("float32")
+    y_all = df["label"].map(label_to_idx).values
+    model = build_and_train(X_all, y_all, verbose=0)
 
 model.save(OUT / "sign_model.keras")
 tflite_model = tf.lite.TFLiteConverter.from_keras_model(model).convert()
