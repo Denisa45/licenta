@@ -1,5 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Finger keys used in robot_pose, from thumb to pinky.
+const kFingers = ['thumb', 'index', 'middle', 'ring', 'pinky'];
+
+/// Romanian names for the robot_pose finger keys.
+const kFingerNames = {
+  'thumb': 'degetul mare',
+  'index': 'arătătorul',
+  'middle': 'mijlociul',
+  'ring': 'inelarul',
+  'pinky': 'degetul mic',
+};
+
 class Sign {
   final String id;
   final String name;
@@ -20,6 +32,10 @@ class Sign {
     required this.verified,
     required this.robotPose,
   });
+
+  /// Fingers that are up (value 1 in robot_pose), from thumb to pinky.
+  List<String> get raisedFingers =>
+      [for (final f in kFingers) if ((robotPose[f] ?? 0) == 1) f];
 
   factory Sign.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};

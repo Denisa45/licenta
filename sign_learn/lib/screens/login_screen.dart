@@ -9,6 +9,18 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+String _authError(FirebaseAuthException e) => switch (e.code) {
+      'invalid-credential' ||
+      'wrong-password' ||
+      'user-not-found' =>
+        'Email sau parolă greșită.',
+      'email-already-in-use' => 'Există deja un cont cu acest email.',
+      'weak-password' => 'Parola trebuie să aibă minimum 6 caractere.',
+      'invalid-email' => 'Email invalid.',
+      'network-request-failed' => 'Nu există conexiune la internet.',
+      _ => e.message ?? e.code,
+    };
+
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
@@ -30,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await action();
     } on FirebaseAuthException catch (e) {
-      setState(() => _error = e.message ?? e.code);
+      setState(() => _error = _authError(e));
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -73,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'SignLearn',
+                  'Mână în mână',
                   style: Theme.of(context).textTheme.displaySmall,
                 ),
                 const SizedBox(height: 24),
@@ -90,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _password,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Password (min 6 characters)',
+                    labelText: 'Parolă (minimum 6 caractere)',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -115,12 +127,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Sign in'),
+                        : const Text('Intră în cont'),
                   ),
                 ),
                 TextButton(
                   onPressed: _busy ? null : _register,
-                  child: const Text('Create account'),
+                  child: const Text('Creează cont nou'),
                 ),
               ],
             ),
