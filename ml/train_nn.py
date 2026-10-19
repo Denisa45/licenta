@@ -57,7 +57,19 @@ X_te = test[features].values.astype("float32")
 y_te = test["label"].map(label_to_idx).values
 
 # Signs with fewer training samples get a bigger weight (see build_and_train).
+X_COLS = [i for i, c in enumerate(features) if c.startswith("x")]
+
+
+def with_mirrored(X, y):
+    """Adds a left/right mirrored copy of every sample (x -> -x, the wrist is at 0),
+    so the model works with both hands, whichever hand the data was recorded with."""
+    M = X.copy()
+    M[:, X_COLS] *= -1
+    return np.concatenate([X, M]), np.concatenate([y, y])
+
+
 def build_and_train(X, y, verbose=2):
+    X, y = with_mirrored(X, y)
     counts = np.bincount(y, minlength=n_classes)
     weights = {c: len(y) / (n_classes * counts[c]) for c in range(n_classes)}
     m = tf.keras.Sequential([
@@ -77,7 +89,11 @@ def build_and_train(X, y, verbose=2):
 model = build_and_train(X_tr, y_tr)
 
 pred = model.predict(X_te, verbose=0).argmax(axis=1)
-print(f"\nTest accuracy (held-out takes): {accuracy_score(y_te, pred):.3f}\n")
+X_te_mirrored = X_te.copy()
+X_te_mirrored[:, X_COLS] *= -1
+pred_other = model.predict(X_te_mirrored, verbose=0).argmax(axis=1)
+print(f"\nTest accuracy (held-out takes): {accuracy_score(y_te, pred):.3f}")
+print(f"Same takes mirrored (the other hand): {accuracy_score(y_te, pred_other):.3f}\n")
 print(classification_report(y_te, pred, labels=list(range(n_classes)),
                             target_names=labels, digits=3, zero_division=0))
 print("Confusion matrix (rows = true sign, columns = predicted):")
