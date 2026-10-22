@@ -20,3 +20,8 @@ all_code.txt
 # Cheia contului de serviciu Firebase (Pi)
 firebase-key.json
 *-firebase-adminsdk-*.json
+
+# Build output and JVM crash logs
+**/build/
+hs_err_pid*.log
+replay_pid*.log
