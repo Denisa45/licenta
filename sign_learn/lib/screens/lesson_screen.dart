@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
+import '../services/robot_service.dart';
 import '../widgets/sign_camera.dart';
 import '../widgets/sign_widgets.dart';
 import '../l10n.dart';
@@ -56,7 +57,34 @@ class _LessonScreenState extends State<LessonScreen> {
   int _questionIndex = 0;
   int _score = 0;
 
+  // Arată pe robot
+  String? _robotStatus;
+  StreamSubscription<String>? _robotSub;
+
   Sign get sign => widget.sign;
+
+  Future<void> _showOnRobot() async {
+    setState(() => _robotStatus = 'pending');
+    try {
+      final status = await RobotService.instance.showSign(sign.id);
+      await _robotSub?.cancel();
+      _robotSub = status.listen((s) {
+        if (mounted) setState(() => _robotStatus = s);
+      });
+    } catch (_) {
+      if (mounted) setState(() => _robotStatus = 'error');
+    }
+  }
+
+  String get _robotStatusText => switch (_robotStatus) {
+    'pending' => tr('Se trimite la mână...', 'Sending to the hand...'),
+    'processing' => tr('Mâna arată semnul', 'The hand is showing the sign'),
+    'completed' => tr('Gata', 'Done'),
+    _ => tr('Mâna nu a putut arăta semnul', 'The hand could not show the sign'),
+  };
+
+  bool get _robotBusy =>
+      _robotStatus == 'pending' || _robotStatus == 'processing';
 
   @override
   void initState() {
@@ -67,6 +95,7 @@ class _LessonScreenState extends State<LessonScreen> {
   @override
   void dispose() {
     _hintTimer?.cancel();
+    _robotSub?.cancel();
     // Closed during the camera step after trying: save it as a failed attempt.
     if (_step == _Step.attempt && !_recognized && _sawHand) {
       _progress.logSession(
@@ -329,6 +358,18 @@ class _LessonScreenState extends State<LessonScreen> {
                   child: Center(child: HandPoseView(pose: sign.robotPose)),
                 ),
               ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _robotBusy ? null : _showOnRobot,
+                icon: const Icon(Icons.back_hand_outlined),
+                label: Text(
+                  tr('ARATĂ PE MÂNA ROBOTICĂ', 'SHOW ON THE ROBOT HAND'),
+                ),
+              ),
+              if (_robotStatus != null) ...[
+                const SizedBox(height: 8),
+                Text(_robotStatusText, textAlign: TextAlign.center),
+              ],
               const SizedBox(height: 12),
               Card(
                 color: cs.surface,

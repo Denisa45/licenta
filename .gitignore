@@ -17,3 +17,6 @@ doc/Cristina_Dumitru_CNIV_Final.doc
 all_code.txt
 .vscode/
 .venv*/
+# Cheia contului de serviciu Firebase (Pi)
+firebase-key.json
+*-firebase-adminsdk-*.json
