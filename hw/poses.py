@@ -4,7 +4,7 @@ POSES = {
     "0": [],
     "1": ["aratator"],
     "2": ["aratator", "mijlociu"],
-    "3": ["aratator", "mijlociu", "inelar"],
+    "3": ["police", "aratator", "mijlociu"],
     "4": ["aratator", "mijlociu", "inelar", "mic"],
     "5": ["police", "aratator", "mijlociu", "inelar", "mic"],
 }
