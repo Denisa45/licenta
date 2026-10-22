@@ -1,6 +1,6 @@
 """Calibrare interactivă a unui servo pe PCA9685.
 
-Rulare pe Pi:  python3 calibrate_servo.py --channel 0
+Rulare pe Pi:  python3 hw/calibrate_servo.py --channel 0
 Taste: a/d = -/+ 10 µs, A/D = -/+ 50 µs, n = salvează MIN, x = salvează MAX, q = ieșire
 """
 import argparse
