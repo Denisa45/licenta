@@ -58,6 +58,8 @@ class _LessonScreenState extends State<LessonScreen> {
   int _questionIndex = 0;
   int _score = 0;
 
+  Sign get sign => widget.sign;
+
   @override
   void initState() {
     super.initState();
