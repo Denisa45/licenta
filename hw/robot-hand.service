@@ -1,7 +1,7 @@
 # Pornește command_listener.py la boot și îl repornește dacă se oprește.
 #
 # Instalare pe Pi (o singură dată). Dacă utilizatorul nu e "pi" sau repo-ul
-# nu e în ~/licenta, schimbă User, WorkingDirectory și Environment mai jos.
+# nu e în ~/Desktop/licenta, schimbă User, WorkingDirectory și Environment mai jos.
 #   sudo cp hw/robot-hand.service /etc/systemd/system/
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now robot-hand
@@ -11,7 +11,7 @@
 # Oprire:      sudo systemctl stop robot-hand   (ex. înainte de test_fingers.py)
 #
 # Dacă pachetele sunt într-un venv, pune în ExecStart python-ul din venv,
-# ex. /home/pi/licenta/.venv/bin/python.
+# ex. /home/pi/Desktop/licenta/.venv/bin/python.
 
 [Unit]
 Description=Mana robotica - asculta comenzi din Firestore
@@ -20,7 +20,7 @@ After=network-online.target
 
 [Service]
 User=pi
-WorkingDirectory=/home/pi/licenta/hw
+WorkingDirectory=/home/pi/Desktop/licenta/hw
 Environment=FIREBASE_KEY=/home/pi/firebase-key.json
 Environment=ROBOT_HOLD=5
 ExecStart=/usr/bin/python3 -u command_listener.py
