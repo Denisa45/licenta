@@ -12,6 +12,7 @@ Nu o pune niciodată în Git.
 """
 import os
 import queue
+import signal
 import time
 
 import firebase_admin
@@ -20,7 +21,10 @@ from firebase_admin import credentials, firestore
 from robot_hand import release, set_fingers
 
 KEY_PATH = os.environ.get("FIREBASE_KEY", os.path.expanduser("~/firebase-key.json"))
-HOLD = 5  # secunde cât ține semnul, apoi mâna se deschide
+HOLD = float(os.environ.get("ROBOT_HOLD", 5))  # secunde cât ține semnul, apoi mâna se deschide
+# Comenzile mai vechi de atât (ex. trimise cât timp Pi-ul era oprit) nu se mai
+# execută, ca mâna să nu arate semne vechi la pornire. Aplicația așteaptă 20 s.
+MAX_AGE = 15
 
 # chei robot_pose din Firestore -> numele degetelor din robot_hand.py
 POSE_KEYS = {"thumb": "police", "index": "aratator", "middle": "mijlociu",
@@ -46,8 +50,22 @@ def claim(transaction, ref):
 def on_snapshot(docs, changes, read_time):
     # rulează pe firul Firestore; mișcarea se face pe firul principal
     for change in changes:
-        if change.type.name == "ADDED":
-            pending.put(change.document.reference)
+        if change.type.name != "ADDED":
+            continue
+        ref = change.document.reference
+        if age(change.document, read_time) > MAX_AGE:
+            print(f"Comandă veche ignorată: {ref.id}")
+            ref.update({"status": "expired"})
+        else:
+            pending.put(ref)
+
+
+def age(snap, read_time):
+    """Câte secunde are comanda; read_time vine de la server, nu de la ceasul Pi-ului."""
+    try:
+        return (read_time - snap.get("created_at")).total_seconds()
+    except (KeyError, TypeError):
+        return 0  # fără created_at încă: o tratăm ca nouă
 
 
 def set_status(state, sign_id=None):
@@ -84,6 +102,8 @@ def execute(ref):
 
 
 def main():
+    # systemctl stop trimite SIGTERM: oprește-te ca la Ctrl+C, cu mâna eliberată
+    signal.signal(signal.SIGTERM, signal.default_int_handler)
     set_status("idle")
     watch = (db.collection("robot_commands")
              .where(filter=firestore.FieldFilter("status", "==", "pending"))

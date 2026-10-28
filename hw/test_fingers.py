@@ -8,7 +8,7 @@ Rulare pe Pi:
 import sys
 import time
 
-from robot_hand import CLOSED, FINGERS, OPEN, move, release
+from robot_hand import FINGERS, LIMITS, move, release
 
 CYCLES = 2
 
@@ -16,21 +16,22 @@ CYCLES = 2
 def main():
     args = sys.argv[1:]
     if args == ["toate"]:
-        groups = [list(FINGERS.values())]
+        groups = [list(FINGERS)]
     else:
         names = args or list(FINGERS)
         unknown = [n for n in names if n not in FINGERS]
         if unknown:
             sys.exit(f"Deget necunoscut: {unknown}. Opțiuni: {list(FINGERS)} sau toate")
-        groups = [[FINGERS[n]] for n in names]
+        groups = [[n] for n in names]
 
     try:
-        for channels in groups:
+        for names in groups:
             for i in range(CYCLES):
-                print(f"CH{channels} ciclul {i + 1}: {OPEN} -> {CLOSED} -> {OPEN}")
-                move({ch: CLOSED for ch in channels})
+                print(f"{names} ciclul {i + 1}: "
+                      + ", ".join(f"{n} {LIMITS[n][0]} -> {LIMITS[n][1]}" for n in names))
+                move({FINGERS[n]: LIMITS[n][1] for n in names})
                 time.sleep(0.5)
-                move({ch: OPEN for ch in channels})
+                move({FINGERS[n]: LIMITS[n][0] for n in names})
                 time.sleep(0.5)
     finally:
         release()

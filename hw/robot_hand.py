@@ -7,6 +7,18 @@ from adafruit_servokit import ServoKit
 FINGERS = {"police": 0, "aratator": 1, "mijlociu": 2, "inelar": 4, "mic": 5}
 OPEN, CLOSED = 150, 0     # 150 = deget întins, 0 = deget îndoit
 
+# Limitele fiecărui deget: (întins, îndoit), în grade. Pune aici unghiurile la
+# care degetul ajunge la capăt fără ca firul să tragă de servo (servoul nu
+# bâzâie). Le găsești cu test_fingers.py: micșorează intervalul până când
+# servoul nu mai forțează în nicio poziție.
+LIMITS = {
+    "police": (OPEN, CLOSED),
+    "aratator": (OPEN, CLOSED),
+    "mijlociu": (OPEN, CLOSED),
+    "inelar": (OPEN, CLOSED),
+    "mic": (OPEN, CLOSED),
+}
+
 kit = ServoKit(channels=16)
 for ch in FINGERS.values():
     kit.servo[ch].set_pulse_width_range(600, 2400)
@@ -16,13 +28,18 @@ for ch in FINGERS.values():
 _current = {}
 
 
-def move(targets, step=5, delay=0.02):
-    """Mută gradual mai multe canale, fiecare spre unghiul lui: {canal: unghi}."""
+def move(targets, step=3, delay=0.02):
+    """Mută gradual mai multe canale, fiecare spre unghiul lui: {canal: unghi}.
+
+    Pornește și se oprește lin (smoothstep), ca firele să nu fie smucite.
+    """
     start = {ch: _current.get(ch, OPEN) for ch in targets}
     n = max(1, int(max(abs(targets[ch] - start[ch]) for ch in targets) / step))
     for k in range(1, n + 1):
+        t = k / n
+        t = t * t * (3 - 2 * t)
         for ch, a in start.items():
-            angle = a + (targets[ch] - a) * k / n
+            angle = a + (targets[ch] - a) * t
             kit.servo[ch].angle = angle
             _current[ch] = angle
         time.sleep(delay)
@@ -30,7 +47,8 @@ def move(targets, step=5, delay=0.02):
 
 def set_fingers(open_fingers):
     """Întinde degetele numite și le îndoaie pe celelalte."""
-    move({ch: OPEN if name in open_fingers else CLOSED for name, ch in FINGERS.items()})
+    move({ch: LIMITS[name][0] if name in open_fingers else LIMITS[name][1]
+          for name, ch in FINGERS.items()})
 
 
 def release():

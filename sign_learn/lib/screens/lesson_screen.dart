@@ -1,7 +1,8 @@
 // lib/screens/lesson_screen.dart
 //
 // One lesson = one sign, in 3 steps:
-//   1. Învață    the hand drawn from robot_pose + the description
+//   1. Învață    the hand drawn from robot_pose + the description; the robot
+//                hand shows the sign by itself when the step opens
 //   2. Încearcă  the camera must recognize the sign (>= 80% held for 1 second)
 //   3. Verifică  3 quiz questions
 // Feedback is gentle: wrong answers show the right one, nothing is taken away,
@@ -15,7 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
-import '../services/robot_service.dart';
+import '../widgets/robot_button.dart';
 import '../widgets/sign_camera.dart';
 import '../widgets/sign_widgets.dart';
 import '../l10n.dart';
@@ -57,35 +58,6 @@ class _LessonScreenState extends State<LessonScreen> {
   int _questionIndex = 0;
   int _score = 0;
 
-  // Arată pe robot
-  String? _robotStatus;
-  StreamSubscription<String>? _robotSub;
-
-  Sign get sign => widget.sign;
-
-  Future<void> _showOnRobot() async {
-    setState(() => _robotStatus = 'pending');
-    try {
-      final status = await RobotService.instance.showSign(sign.id);
-      await _robotSub?.cancel();
-      _robotSub = status.listen((s) {
-        if (mounted) setState(() => _robotStatus = s);
-      });
-    } catch (_) {
-      if (mounted) setState(() => _robotStatus = 'error');
-    }
-  }
-
-  String get _robotStatusText => switch (_robotStatus) {
-    'pending' => tr('Se trimite la mână...', 'Sending to the hand...'),
-    'processing' => tr('Mâna arată semnul', 'The hand is showing the sign'),
-    'completed' => tr('Gata', 'Done'),
-    _ => tr('Mâna nu a putut arăta semnul', 'The hand could not show the sign'),
-  };
-
-  bool get _robotBusy =>
-      _robotStatus == 'pending' || _robotStatus == 'processing';
-
   @override
   void initState() {
     super.initState();
@@ -95,7 +67,6 @@ class _LessonScreenState extends State<LessonScreen> {
   @override
   void dispose() {
     _hintTimer?.cancel();
-    _robotSub?.cancel();
     // Closed during the camera step after trying: save it as a failed attempt.
     if (_step == _Step.attempt && !_recognized && _sawHand) {
       _progress.logSession(
@@ -359,17 +330,8 @@ class _LessonScreenState extends State<LessonScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _robotBusy ? null : _showOnRobot,
-                icon: const Icon(Icons.back_hand_outlined),
-                label: Text(
-                  tr('ARATĂ PE MÂNA ROBOTICĂ', 'SHOW ON THE ROBOT HAND'),
-                ),
-              ),
-              if (_robotStatus != null) ...[
-                const SizedBox(height: 8),
-                Text(_robotStatusText, textAlign: TextAlign.center),
-              ],
+              // The hand shows the sign first, then the child tries it.
+              RobotButton(signId: sign.id, autoStart: true),
               const SizedBox(height: 12),
               Card(
                 color: cs.surface,

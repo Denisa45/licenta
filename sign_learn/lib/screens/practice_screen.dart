@@ -3,6 +3,7 @@
 // "Exersare": free camera practice. Shows whatever sign the camera sees, with the
 // probability of every sign. Optionally pick a sign to aim for: when it is
 // recognized, the attempt is saved in practice_sessions (step 'practice').
+// With a sign picked, the robot hand can show it first.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import '../models/sign.dart';
 import '../services/progress_service.dart';
 import '../widgets/language_button.dart';
+import '../widgets/robot_button.dart';
 import '../widgets/sign_camera.dart';
 import '../l10n.dart';
 
@@ -91,6 +93,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   );
                 },
               ),
+              if (_target != null) ...[
+                const SizedBox(height: 12),
+                RobotButton(signId: _target!.id),
+              ],
               const SizedBox(height: 12),
               Expanded(
                 child: SignCamera(
