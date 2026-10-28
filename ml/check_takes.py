@@ -10,6 +10,7 @@ EXPECTED = {
     "3": "thumb + index + middle",
     "4": "index + middle + ring + pinky (thumb folded)",
     "5": "all five",
+    "L":"index + thumb"
 }
 
 

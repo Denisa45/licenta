@@ -16,18 +16,24 @@ DROP = [
     ("1", 1792257667),   # sign 1 take with the thumb out
         ("3", 1792350745),
     ("2", 1792257450),   # sign 2 take with the thumb out most of the time
+    ("1", 1793188656),   # L recorded by mistake as sign 1
+    ("1", 1793188663),   # L recorded by mistake as sign 1
 ]
   
 mask = pd.Series(False, index=df.index)
 for label, take in DROP:
     mask |= (df["label"] == label) & (df["take"] == take)
 
-# Sign 2 must have the thumb tucked, sign 3 must have it out: drop the frames
-# where the thumb does not match (same thumb test as check_takes.py).
+# Signs 1 and 2 must have the thumb tucked, 3 and L must have it out: drop the
+# frames where the thumb does not match (same thumb test as check_takes.py).
 p = df[[c for c in df.columns if c not in ("label", "take")]].values.reshape(-1, 21, 3)
 thumb_out = np.linalg.norm(p[:, 4] - p[:, 17], axis=1) > np.linalg.norm(p[:, 3] - p[:, 17], axis=1)
-mask |= ((df["label"] == "2") & thumb_out) | ((df["label"] == "3") & ~thumb_out)
-
+mask |= (df["label"].isin(["1", "2"]) & thumb_out) | (df["label"].isin(["3", "L"]) & ~thumb_out)
+# Takes shorter than about one second (fewer than MIN_FRAMES saved frames) are
+# accidental start/stop presses, not real recordings.
+MIN_FRAMES = 10
+take_size = df.groupby(["label", "take"])["take"].transform("size")
+mask |= take_size < MIN_FRAMES
 clean = df[~mask]
 clean.to_csv("data/landmarks_clean.csv", index=False)
 print(clean.groupby("label")["take"].agg(samples="size", takes="nunique"))
