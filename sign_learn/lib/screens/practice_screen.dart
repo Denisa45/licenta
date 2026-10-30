@@ -100,7 +100,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               const SizedBox(height: 12),
               Expanded(
                 child: SignCamera(
-                  target: _target?.name,
+                  target: _target?.shape,
                   onReading: (r) => setState(() => _reading = r),
                   onSuccess: _onSuccess,
                 ),

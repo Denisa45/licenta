@@ -104,7 +104,7 @@ class _LessonScreenState extends State<LessonScreen> {
   // ---------------------------------------------------------------- Încearcă
 
   void _onReading(SignReading r) {
-    final i = r.labels.indexOf(sign.name);
+    final i = r.labels.indexOf(sign.shape);
     setState(() {
       _reading = r;
       if (r.handVisible) {
@@ -120,7 +120,7 @@ class _LessonScreenState extends State<LessonScreen> {
     setState(() => _recognized = true);
     _progress.logSession(
       target: sign,
-      predicted: source == 'camera' ? sign.name : '-',
+      predicted: source == 'camera' ? sign.shape : '-',
       confidence: _bestConfidence,
       success: source == 'camera',
       step: 'lesson',
@@ -133,8 +133,8 @@ class _LessonScreenState extends State<LessonScreen> {
   String? _fingerFeedback() {
     final r = _reading;
     if (r == null || !r.handVisible || _recognized) return null;
-    if (r.label == sign.name || r.confidence < 0.6) return null;
-    final seen = widget.allSigns.where((s) => s.name == r.label).firstOrNull;
+    if (r.label == sign.shape || r.confidence < 0.6) return null;
+    final seen = widget.allSigns.where((s) => s.shape == r.label).firstOrNull;
     if (seen == null) return null;
     final tips = <String>[];
     for (final f in kFingers) {
@@ -427,7 +427,7 @@ class _LessonScreenState extends State<LessonScreen> {
         const SizedBox(height: 12),
         Expanded(
           child: SignCamera(
-            target: sign.name,
+            target: sign.shape,
             onReading: _onReading,
             onSuccess: _onRecognized,
           ),

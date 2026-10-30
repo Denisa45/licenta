@@ -31,6 +31,10 @@ class Sign {
   final bool verified;
   final Map<String, int> robotPose;
 
+  /// Model label the camera must see for this sign: 'shape' from Firestore,
+  /// or the sign's own name. V uses the shape of 2, B of 4, D of 1.
+  final String shape;
+
   const Sign({
     required this.id,
     required this.name,
@@ -41,6 +45,7 @@ class Sign {
     required this.order,
     required this.verified,
     required this.robotPose,
+    required this.shape,
   });
 
   /// Fingers that are up (value 1 in robot_pose), from thumb to pinky.
@@ -82,6 +87,7 @@ class Sign {
       order: (data['order'] ?? 0) as int,
       verified: (data['verified'] ?? false) as bool,
       robotPose: pose.map((k, v) => MapEntry(k, (v as num).toInt())),
+      shape: (data['shape'] ?? data['name'] ?? '').toString(),
     );
   }
 }
