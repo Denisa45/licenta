@@ -156,8 +156,18 @@ class _LessonScreenState extends State<LessonScreen> {
 
   List<_Question> _buildQuestions() {
     final rnd = Random();
-    final others = widget.allSigns.where((s) => s.id != sign.id).toList()
-      ..shuffle(rnd);
+    final isNumber = int.tryParse(sign.name) != null;
+    // Wrong answers come from the same unit first (letters with letters,
+    // numbers with numbers), then from the other units if there are too few.
+    final sameUnit =
+        widget.allSigns
+            .where((s) => s.id != sign.id && s.unit == sign.unit)
+            .toList()
+          ..shuffle(rnd);
+    final otherUnits =
+        widget.allSigns.where((s) => s.unit != sign.unit).toList()
+          ..shuffle(rnd);
+    final others = [...sameUnit, ...otherUnits];
 
     _Question single(
       String prompt,
@@ -179,7 +189,15 @@ class _LessonScreenState extends State<LessonScreen> {
 
     return [
       single(
-        tr('Ce număr arată această mână?', 'Which number does this hand show?'),
+        isNumber
+            ? tr(
+                'Ce număr arată această mână?',
+                'Which number does this hand show?',
+              )
+            : tr(
+                'Ce literă arată această mână?',
+                'Which letter does this hand show?',
+              ),
         sign.name,
         [for (final s in others) s.name],
         visual: HandPoseView(pose: sign.robotPose, height: 160),
