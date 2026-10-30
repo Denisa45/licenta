@@ -101,6 +101,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               Expanded(
                 child: SignCamera(
                   target: _target?.shape,
+                  targetName: _target?.name,
                   onReading: (r) => setState(() => _reading = r),
                   onSuccess: _onSuccess,
                 ),

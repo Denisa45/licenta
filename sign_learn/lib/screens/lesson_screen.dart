@@ -428,6 +428,7 @@ class _LessonScreenState extends State<LessonScreen> {
         Expanded(
           child: SignCamera(
             target: sign.shape,
+            targetName: sign.name,
             onReading: _onReading,
             onSuccess: _onRecognized,
           ),

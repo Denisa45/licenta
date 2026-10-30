@@ -61,6 +61,10 @@ class SignCamera extends StatefulWidget {
   /// Label the learner should show (for example '2'), or null for free practice.
   final String? target;
 
+  /// Name shown when [target] is seen, if it differs from the model label:
+  /// lesson V checks the shape '2' but the badge says 'Semnul V'.
+  final String? targetName;
+
   /// Called with every smoothed reading (about 15 times per second).
   final ValueChanged<SignReading>? onReading;
 
@@ -78,6 +82,7 @@ class SignCamera extends StatefulWidget {
   const SignCamera({
     super.key,
     this.target,
+    this.targetName,
     this.onReading,
     this.onSuccess,
     this.threshold = 0.80,
@@ -373,7 +378,8 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     final matching = target != null && _label == target && _handVisible;
     final text = !_handVisible
         ? tr('Arată mâna în fața camerei', 'Show your hand to the camera')
-        : '${tr('Semnul', 'Sign')} $_label · ${(_confidence * 100).round()}%';
+        : '${tr('Semnul', 'Sign')} ${matching ? widget.targetName ?? _label : _label} · '
+              '${(_confidence * 100).round()}%';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
