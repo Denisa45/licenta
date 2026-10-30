@@ -7,7 +7,7 @@ Every time you press 'r' to start recording, a NEW take id is created
 can treat each recording as one take.
 
 Keys (click the camera window first):
-    1-5 , L   choose which sign you are recording
+    1-5 , L , A   choose which sign you are recording
     r     start / stop a take
     q     quit
 
@@ -26,7 +26,7 @@ import mediapipe as mp
 ML_DIR = Path(__file__).resolve().parent
 DATA_DIR = ML_DIR / "data"
 OUT_CSV = DATA_DIR / "landmarks.csv"
-LABELS = "12345L"
+LABELS = "12345LA"
 SAVE_EVERY = 3  # save every 3rd frame (consecutive frames are near-identical)
 HEADER = ["label", "take"] + [f"{a}{i}" for i in range(21) for a in "xyz"]
 

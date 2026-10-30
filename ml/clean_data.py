@@ -28,7 +28,7 @@ for label, take in DROP:
 # frames where the thumb does not match (same thumb test as check_takes.py).
 p = df[[c for c in df.columns if c not in ("label", "take")]].values.reshape(-1, 21, 3)
 thumb_out = np.linalg.norm(p[:, 4] - p[:, 17], axis=1) > np.linalg.norm(p[:, 3] - p[:, 17], axis=1)
-mask |= (df["label"].isin(["1", "2"]) & thumb_out) | (df["label"].isin(["3", "L"]) & ~thumb_out)
+mask |= (df["label"].isin(["1", "2"]) & thumb_out) | (df["label"].isin(["3", "L","A"]) & ~thumb_out)
 # Takes shorter than about one second (fewer than MIN_FRAMES saved frames) are
 # accidental start/stop presses, not real recordings.
 MIN_FRAMES = 10
