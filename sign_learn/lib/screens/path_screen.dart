@@ -328,7 +328,7 @@ class _LessonTile extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${tr('Semnul', 'Sign')} ${sign.name}',
+                                '${sign.kind} ${sign.name}',
                                 style: text.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: locked ? cs.onSurfaceVariant : null,

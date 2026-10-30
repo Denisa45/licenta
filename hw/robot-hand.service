@@ -23,6 +23,7 @@ User=pi
 WorkingDirectory=/home/pi/Desktop/licenta/hw
 Environment=FIREBASE_KEY=/home/pi/firebase-key.json
 Environment=ROBOT_HOLD=5
+Environment=ROBOT_LETTER_HOLD=2
 ExecStart=/usr/bin/python3 -u command_listener.py
 # fără rețea la boot, firebase eșuează: încearcă din nou după 5 s
 Restart=always

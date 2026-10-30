@@ -27,7 +27,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
       .collection('signs')
       .orderBy('order')
       .get()
-      .then((s) => s.docs.map(Sign.fromFirestore).toList());
+      // Words are practised letter by letter in their lesson, not here.
+      .then(
+        (s) => s.docs.map(Sign.fromFirestore).where((s) => !s.isWord).toList(),
+      );
 
   SignReading? _reading;
   Sign? _target;

@@ -5,6 +5,9 @@
 //                hand shows the sign by itself when the step opens
 //   2. Încearcă  the camera must recognize the sign (>= 80% held for 1 second)
 //   3. Verifică  3 quiz questions
+// A word lesson (a sign with 'letters', e.g. DA) has the same steps: the robot
+// spells the word, the camera checks the letters one after another, and the
+// quiz asks about the word and its letters.
 // Feedback is gentle: wrong answers show the right one, nothing is taken away,
 // and the lesson is completed whatever the quiz score (spec WEB-08).
 
@@ -60,6 +63,17 @@ class _LessonScreenState extends State<LessonScreen> {
 
   Sign get sign => widget.sign;
 
+  // Word lessons: the letter signs in order, and the one the camera checks now.
+  late final List<Sign> _letters = [
+    for (final id in sign.letters)
+      ...widget.allSigns.where((s) => s.id == id).take(1),
+  ];
+  int _letterIndex = 0;
+
+  /// The sign the camera checks now: the lesson's sign, or the current letter.
+  Sign get _target =>
+      sign.isWord && _letters.isNotEmpty ? _letters[_letterIndex] : sign;
+
   @override
   void initState() {
     super.initState();
@@ -84,12 +98,7 @@ class _LessonScreenState extends State<LessonScreen> {
 
   void _goTo(_Step step) {
     setState(() => _step = step);
-    if (step == _Step.attempt) {
-      _hintTimer?.cancel();
-      _hintTimer = Timer(const Duration(seconds: 20), () {
-        if (mounted && !_recognized) setState(() => _showHint = true);
-      });
-    }
+    if (step == _Step.attempt) _startHintTimer();
     if (step == _Step.done) {
       _progress.completeLesson(
         sign: sign,
@@ -103,8 +112,29 @@ class _LessonScreenState extends State<LessonScreen> {
 
   // ---------------------------------------------------------------- Încearcă
 
+  void _startHintTimer() {
+    _hintTimer?.cancel();
+    _hintTimer = Timer(const Duration(seconds: 20), () {
+      if (mounted && !_recognized) setState(() => _showHint = true);
+    });
+  }
+
+  /// Word lessons move on to the next letter; the last letter (or a single
+  /// sign) completes the step.
+  void _onTargetRecognized() {
+    if (sign.isWord && _letterIndex + 1 < _letters.length) {
+      setState(() {
+        _letterIndex++;
+        _showHint = false;
+      });
+      _startHintTimer();
+      return;
+    }
+    _onRecognized();
+  }
+
   void _onReading(SignReading r) {
-    final i = r.labels.indexOf(sign.shape);
+    final i = r.labels.indexOf(_target.shape);
     setState(() {
       _reading = r;
       if (r.handVisible) {
@@ -120,7 +150,9 @@ class _LessonScreenState extends State<LessonScreen> {
     setState(() => _recognized = true);
     _progress.logSession(
       target: sign,
-      predicted: source == 'camera' ? sign.shape : '-',
+      predicted: source == 'camera'
+          ? (sign.isWord ? sign.name : sign.shape)
+          : '-',
       confidence: _bestConfidence,
       success: source == 'camera',
       step: 'lesson',
@@ -133,12 +165,13 @@ class _LessonScreenState extends State<LessonScreen> {
   String? _fingerFeedback() {
     final r = _reading;
     if (r == null || !r.handVisible || _recognized) return null;
-    if (r.label == sign.shape || r.confidence < 0.6) return null;
+    final target = _target;
+    if (r.label == target.shape || r.confidence < 0.6) return null;
     final seen = widget.allSigns.where((s) => s.shape == r.label).firstOrNull;
     if (seen == null) return null;
     final tips = <String>[];
     for (final f in kFingers) {
-      final want = (sign.robotPose[f] ?? 0) == 1;
+      final want = (target.robotPose[f] ?? 0) == 1;
       final has = (seen.robotPose[f] ?? 0) == 1;
       final name = fingerName(f);
       if (want && !has) tips.add(tr('ridică $name', 'raise the $name'));
@@ -161,11 +194,11 @@ class _LessonScreenState extends State<LessonScreen> {
     // numbers with numbers), then from the other units if there are too few.
     final sameUnit =
         widget.allSigns
-            .where((s) => s.id != sign.id && s.unit == sign.unit)
+            .where((s) => s.id != sign.id && s.unit == sign.unit && !s.isWord)
             .toList()
           ..shuffle(rnd);
     final otherUnits =
-        widget.allSigns.where((s) => s.unit != sign.unit).toList()
+        widget.allSigns.where((s) => s.unit != sign.unit && !s.isWord).toList()
           ..shuffle(rnd);
     final others = [...sameUnit, ...otherUnits];
 
@@ -186,6 +219,8 @@ class _LessonScreenState extends State<LessonScreen> {
         correct: {options.indexOf(answer)},
       );
     }
+
+    if (sign.isWord) return _wordQuestions(single, rnd);
 
     return [
       single(
@@ -249,6 +284,67 @@ class _LessonScreenState extends State<LessonScreen> {
     ];
   }
 
+  /// Word lessons: which word the robot spelled, its first letter, and which
+  /// letter a hand shows.
+  List<_Question> _wordQuestions(
+    _Question Function(String, String, List<String>, {Widget? visual}) single,
+    Random rnd,
+  ) {
+    final letterSigns =
+        widget.allSigns
+            .where((s) => !s.isWord && int.tryParse(s.name) == null)
+            .toList()
+          ..shuffle(rnd);
+    final letterNames = [for (final s in letterSigns) s.name];
+    // Other words first; with few words, made-up ones from the known letters.
+    final wrongWords = <String>{
+      for (final s in widget.allSigns)
+        if (s.isWord && s.id != sign.id) s.name,
+      [for (final l in _letters.reversed) l.name].join(),
+      if (letterNames.isNotEmpty)
+        for (var i = 0; i < 6; i++)
+          [
+            for (final _ in _letters)
+              letterNames[rnd.nextInt(letterNames.length)],
+          ].join(),
+    }..remove(sign.name);
+
+    return [
+      single(
+        tr(
+          'Ce cuvânt a arătat mâna robotică?',
+          'Which word did the robot hand show?',
+        ),
+        sign.name,
+        wrongWords.toList(),
+        visual: _LetterRow(letters: _letters, height: 110),
+      ),
+      if (_letters.isNotEmpty) ...[
+        single(
+          tr(
+            'Cu ce literă începe cuvântul ${sign.name}?',
+            'Which letter does the word ${sign.name} start with?',
+          ),
+          _letters.first.name,
+          letterNames,
+        ),
+        single(
+          tr(
+            'Ce literă arată această mână?',
+            'Which letter does this hand show?',
+          ),
+          _letters.last.name,
+          [
+            for (final s in letterSigns)
+              if (s.raisedFingersText != _letters.last.raisedFingersText)
+                s.name,
+          ],
+          visual: HandPoseView(pose: _letters.last.robotPose, height: 160),
+        ),
+      ],
+    ];
+  }
+
   void _onAnswered(bool correct) {
     if (correct) _score++;
   }
@@ -287,7 +383,7 @@ class _LessonScreenState extends State<LessonScreen> {
           tooltip: tr('Închide lecția', 'Close the lesson'),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('${tr('Semnul', 'Sign')} ${sign.name} · $title'),
+        title: Text('${sign.kind} ${sign.name} · $title'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(10),
           child: Padding(
@@ -346,7 +442,11 @@ class _LessonScreenState extends State<LessonScreen> {
                 color: cs.surface,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 28),
-                  child: Center(child: HandPoseView(pose: sign.robotPose)),
+                  child: Center(
+                    child: sign.isWord
+                        ? _LetterRow(letters: _letters)
+                        : HandPoseView(pose: sign.robotPose),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -363,7 +463,7 @@ class _LessonScreenState extends State<LessonScreen> {
                       Row(
                         children: [
                           Text(
-                            '${tr('Semnul', 'Sign')} ${sign.name}',
+                            '${sign.kind} ${sign.name}',
                             style: text.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
@@ -404,15 +504,30 @@ class _LessonScreenState extends State<LessonScreen> {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final feedback = _fingerFeedback();
-    final fingers = [for (final f in sign.raisedFingers) fingerName(f)];
+    final target = _target;
+    final fingers = [for (final f in target.raisedFingers) fingerName(f)];
 
     return Column(
       children: [
         Text(
           _recognized
+              ? sign.isWord
+                    ? tr(
+                        'Bravo! Ai arătat cuvântul ${sign.name}.',
+                        'Well done! You showed the word ${sign.name}.',
+                      )
+                    : tr(
+                        'Bravo! Am recunoscut semnul ${sign.name}.',
+                        'Well done! Sign ${sign.name} was recognized.',
+                      )
+              : sign.isWord
               ? tr(
-                  'Bravo! Am recunoscut semnul ${sign.name}.',
-                  'Well done! Sign ${sign.name} was recognized.',
+                  'Arată litera ${target.name} '
+                      '(${_letterIndex + 1} din ${_letters.length}) '
+                      'și ține-o o secundă.',
+                  'Show the letter ${target.name} '
+                      '(${_letterIndex + 1} of ${_letters.length}) '
+                      'and hold it for a second.',
                 )
               : tr(
                   'Fă semnul ${sign.name} în fața camerei și ține-l o secundă.',
@@ -424,13 +539,21 @@ class _LessonScreenState extends State<LessonScreen> {
           ),
           textAlign: TextAlign.center,
         ),
+        if (sign.isWord) ...[
+          const SizedBox(height: 8),
+          _LetterProgress(
+            letters: _letters,
+            current: _letterIndex,
+            done: _recognized,
+          ),
+        ],
         const SizedBox(height: 12),
         Expanded(
           child: SignCamera(
-            target: sign.shape,
-            targetName: sign.name,
+            target: target.shape,
+            targetName: target.name,
             onReading: _onReading,
-            onSuccess: _onRecognized,
+            onSuccess: _onTargetRecognized,
           ),
         ),
         if (feedback != null || (_showHint && !_recognized)) ...[
@@ -517,10 +640,15 @@ class _LessonScreenState extends State<LessonScreen> {
                 if (next != null && widget.previous?.completed != true) ...[
                   const SizedBox(height: 20),
                   Text(
-                    tr(
-                      'Ai deblocat semnul ${next.name}.',
-                      'You unlocked sign ${next.name}.',
-                    ),
+                    next.isWord
+                        ? tr(
+                            'Ai deblocat cuvântul ${next.name}.',
+                            'You unlocked the word ${next.name}.',
+                          )
+                        : tr(
+                            'Ai deblocat semnul ${next.name}.',
+                            'You unlocked sign ${next.name}.',
+                          ),
                     style: text.titleMedium?.copyWith(
                       color: cs.primary,
                       fontWeight: FontWeight.w800,
@@ -764,6 +892,78 @@ class _OptionTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Word lessons: the hand of every letter, with its name under it.
+class _LetterRow extends StatelessWidget {
+  final List<Sign> letters;
+  final double height;
+
+  const _LetterRow({required this.letters, this.height = 160});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 24,
+      runSpacing: 16,
+      children: [
+        for (final l in letters)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              HandPoseView(pose: l.robotPose, height: height),
+              const SizedBox(height: 8),
+              Text(
+                l.name,
+                style: text.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+/// Word lessons, "Încearcă": the letters of the word, done ones ticked and the
+/// current one highlighted.
+class _LetterProgress extends StatelessWidget {
+  final List<Sign> letters;
+  final int current;
+  final bool done;
+
+  const _LetterProgress({
+    required this.letters,
+    required this.current,
+    required this.done,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      children: [
+        for (var i = 0; i < letters.length; i++)
+          Chip(
+            avatar: done || i < current
+                ? Icon(Icons.check, color: cs.primary)
+                : null,
+            label: Text(
+              letters[i].name,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+            backgroundColor: !done && i == current
+                ? cs.secondaryContainer
+                : cs.surface,
+          ),
+      ],
     );
   }
 }

@@ -3,6 +3,8 @@
 Aplicația scrie în robot_commands un document {sign_id, uid, status: "pending",
 created_at}. Pi-ul îl preia (pending -> processing), citește robot_pose din
 signs/{sign_id}, arată semnul, apoi pune status = "completed" sau "error".
+Un cuvânt (semn cu "letters", ex. DA: ["D", "A"]) e arătat literă cu literă,
+fiecare cu robot_pose din signs/{literă}.
 Starea mâinii se scrie în robot_status/hand.
 
 Rulare pe Pi:
@@ -22,6 +24,7 @@ from robot_hand import release, set_fingers
 
 KEY_PATH = os.environ.get("FIREBASE_KEY", os.path.expanduser("~/firebase-key.json"))
 HOLD = float(os.environ.get("ROBOT_HOLD", 5))  # secunde cât ține semnul, apoi mâna se deschide
+LETTER_HOLD = float(os.environ.get("ROBOT_LETTER_HOLD", 2))  # secunde pe literă, la cuvinte
 # Comenzile mai vechi de atât (ex. trimise cât timp Pi-ul era oprit) nu se mai
 # execută, ca mâna să nu arate semne vechi la pornire. Aplicația așteaptă 20 s.
 MAX_AGE = 15
@@ -73,6 +76,15 @@ def set_status(state, sign_id=None):
                     "updated_at": firestore.SERVER_TIMESTAMP})
 
 
+def open_fingers(sign_id):
+    """Degetele întinse ale unui semn, din robot_pose din Firestore."""
+    sign = db.collection("signs").document(str(sign_id)).get()
+    if not sign.exists:
+        raise ValueError(f"semn necunoscut: {sign_id}")
+    pose = sign.to_dict().get("robot_pose") or {}
+    return [POSE_KEYS[k] for k, v in pose.items() if k in POSE_KEYS and v == 1]
+
+
 def execute(ref):
     if not claim(db.transaction(), ref):
         return
@@ -81,13 +93,16 @@ def execute(ref):
         sign = db.collection("signs").document(str(sign_id)).get()
         if not sign.exists:
             raise ValueError(f"semn necunoscut: {sign_id}")
-        pose = sign.to_dict().get("robot_pose") or {}
-        open_fingers = [POSE_KEYS[k] for k, v in pose.items() if k in POSE_KEYS and v == 1]
+        letters = sign.to_dict().get("letters") or []
+        # (degete întinse, cât ține) pentru fiecare pas: o literă sau semnul
+        steps = ([(open_fingers(l), LETTER_HOLD) for l in letters] if letters
+                 else [(open_fingers(sign_id), HOLD)])
 
-        print(f"Semnul {sign_id}: {open_fingers}")
         set_status("moving", sign_id)
-        set_fingers(open_fingers)
-        time.sleep(HOLD)
+        for fingers, hold in steps:
+            print(f"Semnul {sign_id}: {fingers}")
+            set_fingers(fingers)
+            time.sleep(hold)
         set_fingers(list(POSE_KEYS.values()))   # înapoi la mâna deschisă
         release()
 

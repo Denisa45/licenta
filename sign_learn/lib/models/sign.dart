@@ -35,6 +35,10 @@ class Sign {
   /// or the sign's own name. V uses the shape of 2, B of 4, D of 1.
   final String shape;
 
+  /// For a word lesson, the ids of its letter signs in order (DA: ['D', 'A']).
+  /// Empty for a single sign.
+  final List<String> letters;
+
   const Sign({
     required this.id,
     required this.name,
@@ -46,7 +50,13 @@ class Sign {
     required this.verified,
     required this.robotPose,
     required this.shape,
+    this.letters = const [],
   });
+
+  bool get isWord => letters.isNotEmpty;
+
+  /// 'Semnul' or 'Cuvântul', for titles such as "Semnul A" and "Cuvântul DA".
+  String get kind => isWord ? tr('Cuvântul', 'Word') : tr('Semnul', 'Sign');
 
   /// Fingers that are up (value 1 in robot_pose), from thumb to pinky.
   List<String> get raisedFingers => [
@@ -69,6 +79,11 @@ class Sign {
 
   String get howTo => localDescription.isNotEmpty
       ? localDescription
+      : isWord
+      ? tr(
+          'Arată literele pe rând: ${letters.join(', ')}.',
+          'Show the letters one after another: ${letters.join(', ')}.',
+        )
       : tr(
           'Ridică $raisedFingersText; celelalte degete rămân îndoite.',
           'Raise the $raisedFingersText; keep the other fingers bent.',
@@ -88,6 +103,7 @@ class Sign {
       verified: (data['verified'] ?? false) as bool,
       robotPose: pose.map((k, v) => MapEntry(k, (v as num).toInt())),
       shape: (data['shape'] ?? data['name'] ?? '').toString(),
+      letters: [for (final l in data['letters'] as List? ?? []) l.toString()],
     );
   }
 }
