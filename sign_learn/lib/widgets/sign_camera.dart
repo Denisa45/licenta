@@ -79,6 +79,18 @@ class SignCamera extends StatefulWidget {
   /// Rotate / Mirror buttons and the frame info line.
   final bool showDebugControls;
 
+  /// Every hand from the camera, after the rotate/mirror steps, in the
+  /// proportions of the training frames (null when no hand is visible).
+  /// Used by DynamicSignCamera to record a moving sign.
+  final ValueChanged<List<(double, double, double)>?>? onHand;
+
+  /// False: no static-sign classification, only the hand is tracked (for
+  /// moving signs). The badge then shows [statusText].
+  final bool staticRecognition;
+
+  /// Replaces the badge text (when [staticRecognition] is false).
+  final String? statusText;
+
   const SignCamera({
     super.key,
     this.target,
@@ -88,6 +100,9 @@ class SignCamera extends StatefulWidget {
     this.threshold = 0.80,
     this.holdTime = const Duration(seconds: 1),
     this.showDebugControls = kDebugMode,
+    this.onHand,
+    this.staticRecognition = true,
+    this.statusText,
   });
 
   @override
@@ -241,6 +256,7 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
       _holdStart = null;
       _succeeded = false;
       _holdProgress = 0;
+      widget.onHand?.call(null);
       _publish(handVisible: false);
       return;
     }
@@ -268,6 +284,11 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
     final scaled = [
       for (final (x, y, z) in pts) (x * w * th, y * h * tw, z * w * th),
     ];
+    widget.onHand?.call(scaled);
+    if (!widget.staticRecognition) {
+      _publish(handVisible: true);
+      return;
+    }
     final probs = classifier.probabilities(SignClassifier.normalize(scaled));
 
     // Smooth over a few frames so the answer does not flicker.
@@ -374,12 +395,21 @@ class _SignCameraState extends State<SignCamera> with WidgetsBindingObserver {
 
   Widget _overlay() {
     final cs = Theme.of(context).colorScheme;
-    final target = widget.target;
+    final target = widget.staticRecognition ? widget.target : null;
     final matching = target != null && _label == target && _handVisible;
-    final text = !_handVisible
-        ? tr('Arată mâna în fața camerei', 'Show your hand to the camera')
-        : '${tr('Semnul', 'Sign')} ${matching ? widget.targetName ?? _label : _label} · '
-              '${(_confidence * 100).round()}%';
+    final text =
+        widget.statusText ??
+        (!widget.staticRecognition
+            ? (_handVisible
+                  ? tr('Mâna se vede', 'Hand visible')
+                  : tr(
+                      'Arată mâna în fața camerei',
+                      'Show your hand to the camera',
+                    ))
+            : !_handVisible
+            ? tr('Arată mâna în fața camerei', 'Show your hand to the camera')
+            : '${tr('Semnul', 'Sign')} ${matching ? widget.targetName ?? _label : _label} · '
+                  '${(_confidence * 100).round()}%');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(

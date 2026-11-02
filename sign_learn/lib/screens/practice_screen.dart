@@ -9,8 +9,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
+import '../sign_classifier.dart';
 import '../services/progress_service.dart';
 import '../widgets/language_button.dart';
+import '../widgets/dynamic_sign_camera.dart';
 import '../widgets/robot_button.dart';
 import '../widgets/sign_camera.dart';
 import '../l10n.dart';
@@ -35,14 +37,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
   SignReading? _reading;
   Sign? _target;
 
+  /// Last attempt of a moving sign (DynamicSignCamera).
+  SignPrediction? _motionResult;
+
   void _onSuccess() {
     final target = _target;
-    final reading = _reading;
     if (target == null) return;
+    final motion = _motionResult;
+    final reading = _reading;
     ProgressService.instance.logSession(
       target: target,
-      predicted: reading?.label ?? target.name,
-      confidence: reading?.confidence ?? 0,
+      predicted: target.motion
+          ? motion?.label ?? target.name
+          : reading?.label ?? target.name,
+      confidence: target.motion
+          ? motion?.confidence ?? 0
+          : reading?.confidence ?? 0,
       success: true,
       step: 'practice',
     );
@@ -102,15 +112,33 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ],
               const SizedBox(height: 12),
               Expanded(
-                child: SignCamera(
-                  target: _target?.shape,
-                  targetName: _target?.name,
-                  onReading: (r) => setState(() => _reading = r),
-                  onSuccess: _onSuccess,
-                ),
+                child: _target?.motion ?? false
+                    ? DynamicSignCamera(
+                        target: _target!.shape,
+                        targetName: _target!.name,
+                        onResult: (r) => _motionResult = r,
+                        onSuccess: _onSuccess,
+                      )
+                    : SignCamera(
+                        target: _target?.shape,
+                        targetName: _target?.name,
+                        onReading: (r) => setState(() => _reading = r),
+                        onSuccess: _onSuccess,
+                      ),
               ),
               const SizedBox(height: 12),
-              if (reading != null && reading.handVisible)
+              if (_target?.motion ?? false)
+                Text(
+                  tr(
+                    'Semnul ${_target!.name} are mișcare: apasă Start și fă-l '
+                        'în cele 2 secunde.',
+                    'Sign ${_target!.name} moves: press Start and do it '
+                        'within the 2 seconds.',
+                  ),
+                  style: text.titleMedium,
+                  textAlign: TextAlign.center,
+                )
+              else if (reading != null && reading.handVisible)
                 _ProbabilityBars(reading: reading)
               else
                 Text(

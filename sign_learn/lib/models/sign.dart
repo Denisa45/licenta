@@ -39,6 +39,10 @@ class Sign {
   /// Empty for a single sign.
   final List<String> letters;
 
+  /// True for a sign with movement ('motion: true' in Firestore): it is
+  /// checked by the sequence model (DynamicSignCamera), not by a held shape.
+  final bool motion;
+
   const Sign({
     required this.id,
     required this.name,
@@ -51,6 +55,7 @@ class Sign {
     required this.robotPose,
     required this.shape,
     this.letters = const [],
+    this.motion = false,
   });
 
   bool get isWord => letters.isNotEmpty;
@@ -104,6 +109,7 @@ class Sign {
       robotPose: pose.map((k, v) => MapEntry(k, (v as num).toInt())),
       shape: (data['shape'] ?? data['name'] ?? '').toString(),
       letters: [for (final l in data['letters'] as List? ?? []) l.toString()],
+      motion: (data['motion'] ?? false) as bool,
     );
   }
 }

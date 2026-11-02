@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
+import '../widgets/dynamic_sign_camera.dart';
 import '../widgets/robot_button.dart';
 import '../widgets/sign_camera.dart';
 import '../widgets/sign_widgets.dart';
@@ -284,8 +285,9 @@ class _LessonScreenState extends State<LessonScreen> {
     ];
   }
 
-  /// Word lessons: which word the robot spelled, its first letter, and which
-  /// letter a hand shows.
+  /// Word lessons: read the word from the hand drawings (names hidden),
+  /// recognize one of its letters from a drawing, and say which fingers are up
+  /// for another one. None of them can be answered just by reading the word.
   List<_Question> _wordQuestions(
     _Question Function(String, String, List<String>, {Widget? visual}) single,
     Random rnd,
@@ -309,39 +311,55 @@ class _LessonScreenState extends State<LessonScreen> {
           ].join(),
     }..remove(sign.name);
 
+    // Two different letters of the word (by name: MAMA has M and A).
+    final distinct = <String, Sign>{
+      for (final l in _letters) l.name: l,
+    }.values.toList()..shuffle(rnd);
+    final shown = distinct.isEmpty ? null : distinct.first;
+    final fingers = distinct.length > 1 ? distinct[1] : shown;
+
     return [
       single(
         tr(
-          'Ce cuvânt a arătat mâna robotică?',
-          'Which word did the robot hand show?',
+          'Ce cuvânt formează aceste semne?',
+          'Which word do these signs spell?',
         ),
         sign.name,
         wrongWords.toList(),
-        visual: _LetterRow(letters: _letters, height: 110),
+        visual: _LetterRow(letters: _letters, height: 110, showNames: false),
       ),
-      if (_letters.isNotEmpty) ...[
+      if (shown != null)
         single(
           tr(
-            'Cu ce literă începe cuvântul ${sign.name}?',
-            'Which letter does the word ${sign.name} start with?',
+            'Ce literă din cuvântul ${sign.name} arată această mână?',
+            'Which letter of the word ${sign.name} does this hand show?',
           ),
-          _letters.first.name,
-          letterNames,
-        ),
-        single(
-          tr(
-            'Ce literă arată această mână?',
-            'Which letter does this hand show?',
-          ),
-          _letters.last.name,
+          shown.name,
           [
             for (final s in letterSigns)
-              if (s.raisedFingersText != _letters.last.raisedFingersText)
-                s.name,
+              if (s.raisedFingersText != shown.raisedFingersText) s.name,
           ],
-          visual: HandPoseView(pose: _letters.last.robotPose, height: 160),
+          visual: HandPoseView(pose: shown.robotPose, height: 160),
         ),
-      ],
+      if (fingers != null)
+        _Question(
+          prompt: tr(
+            'Ce degete sunt ridicate la litera ${fingers.name}, '
+                'din cuvântul ${sign.name}?',
+            'Which fingers are up in the letter ${fingers.name}, '
+                'in the word ${sign.name}?',
+          ),
+          hint: tr(
+            'Alege toate degetele ridicate.',
+            'Choose all the raised fingers.',
+          ),
+          options: [for (final f in kFingers) fingerName(f)],
+          correct: {
+            for (var i = 0; i < kFingers.length; i++)
+              if (fingers.raisedFingers.contains(kFingers[i])) i,
+          },
+          multi: true,
+        ),
     ];
   }
 
@@ -529,6 +547,13 @@ class _LessonScreenState extends State<LessonScreen> {
                       '(${_letterIndex + 1} of ${_letters.length}) '
                       'and hold it for a second.',
                 )
+              : target.motion
+              ? tr(
+                  'Apasă Start și fă semnul ${sign.name}, cu mișcarea lui, '
+                      'în cele 2 secunde.',
+                  'Press Start and do sign ${sign.name}, with its movement, '
+                      'within the 2 seconds.',
+                )
               : tr(
                   'Fă semnul ${sign.name} în fața camerei și ține-l o secundă.',
                   'Show sign ${sign.name} to the camera and hold it for a second.',
@@ -549,14 +574,21 @@ class _LessonScreenState extends State<LessonScreen> {
         ],
         const SizedBox(height: 12),
         Expanded(
-          child: SignCamera(
-            target: target.shape,
-            targetName: target.name,
-            onReading: _onReading,
-            onSuccess: _onTargetRecognized,
-          ),
+          child: target.motion
+              ? DynamicSignCamera(
+                  target: target.shape,
+                  targetName: target.name,
+                  onSuccess: _onTargetRecognized,
+                )
+              : SignCamera(
+                  target: target.shape,
+                  targetName: target.name,
+                  onReading: _onReading,
+                  onSuccess: _onTargetRecognized,
+                ),
         ),
-        if (feedback != null || (_showHint && !_recognized)) ...[
+        if (!target.motion &&
+            (feedback != null || (_showHint && !_recognized))) ...[
           const SizedBox(height: 8),
           Card(
             color: cs.secondaryContainer,
@@ -901,7 +933,14 @@ class _LetterRow extends StatelessWidget {
   final List<Sign> letters;
   final double height;
 
-  const _LetterRow({required this.letters, this.height = 160});
+  /// False in the quiz, where the learner has to read the word from the hands.
+  final bool showNames;
+
+  const _LetterRow({
+    required this.letters,
+    this.height = 160,
+    this.showNames = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -916,13 +955,15 @@ class _LetterRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               HandPoseView(pose: l.robotPose, height: height),
-              const SizedBox(height: 8),
-              Text(
-                l.name,
-                style: text.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+              if (showNames) ...[
+                const SizedBox(height: 8),
+                Text(
+                  l.name,
+                  style: text.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
       ],

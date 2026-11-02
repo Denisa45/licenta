@@ -64,7 +64,9 @@ flutter:
   uses-material-design: true
 
   assets:
-     - assets/sign_model.json
+     # The whole folder: sign_model.json (static signs) and, once trained,
+     # seq_model.json (moving signs, ml/dynamic/export_seq_weights.py).
+     - assets/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
