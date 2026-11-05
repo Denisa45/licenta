@@ -38,11 +38,26 @@ import mediapipe as mp
 
 from seq_features import DURATION
 
-# The dynamic signs of the app. Change this list to the 10-15 signs you choose;
-# the names are the labels the app checks (the 'shape' field in Firestore).
+# The dynamic signs of the app, as shown on pesemne.ro (LSR video dictionary):
+# https://pesemne.ro/wp-content/uploads/clips/<name>.mp4, e.g. la-revedere.mp4.
+# All are done with one hand. The names are the labels the app checks
+# (the 'shape' field in Firestore).
 SIGNS = [
-    "BUNA", "MULTUMESC", "TE_ROG", "DA", "NU", "CE", "UNDE",
-    "APA", "MAMA", "TATA", "PRIETEN", "SCUZE",
+    "LA_REVEDERE",  # open hand, the 4 fingers close and open, thumb stays out
+    "SALUT",        # open hand raised, waves from the wrist
+    "MULTUMESC",    # flat hand touches the chin, then moves away
+    "DA",           # index up, then a closed fist
+    "NU",           # index up, swings left-right
+    "BINE",         # index + middle up, the hand moves down
+    "MAMA",         # flat hand touches the cheek
+    "TATA",         # "OK" hand at the temple, then to the side
+    "BUNIC",        # fist at the cheek, twists
+    "CAND",         # only the thumb out, at the cheek
+    "UNDE",         # thumb out, hand horizontal, index bends in, repeated
+    "AN",           # thumb + index hold the chin
+    "SAPTAMANA",    # index from the chin forward (towards the other person)
+    "APA",          # "OK" hand moves towards yourself, repeated
+    "VINO",         # index bends towards yourself ("come here")
 ]
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "data" / "dynamic"
