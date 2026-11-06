@@ -6,8 +6,9 @@ One press of SPACE = one sequence: a 3-2-1 countdown, then DURATION seconds
 rest position. Every frame where MediaPipe sees the hand is saved with its time.
 
 Columns: label, session, seq, t, x0, y0, z0, ... x20, y20, z20
-  session  one id per run of this script (the train script holds out the
-           last session of each sign, like the "take" of the static signs)
+  session  the day of the recording, e.g. 20261106 (the train script holds out
+           the last day of each sign, like the "take" of the static signs;
+           restarting the script on the same day stays the same session)
   seq      one id per recorded sequence
   t        seconds since the start of the sequence
   x, y, z  landmarks in PIXELS of the frame (x * width, y * height, z * width),
@@ -100,7 +101,7 @@ def main():
     if not cap.isOpened():
         raise SystemExit("Could not open the webcam.")
 
-    session = int(time.time())
+    session = int(time.strftime("%Y%m%d"))
     sign = 0
     state = "idle"          # idle -> countdown -> recording -> idle
     state_start = 0.0

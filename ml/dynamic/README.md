@@ -27,7 +27,8 @@ Rapoartele (acuratețe, matrice de confuzie) se salvează în
   complet în fereastra de 2 s, pornind din poziția de repaus.
 - `n` / `p` schimbă semnul, `x` respinge ultima secvență (greșită).
 - Ținta: **30+ secvențe pe semn, în cel puțin 2 sesiuni** (zile / lumină /
-  haine diferite). Ultima sesiune a fiecărui semn e setul de test, ca la
+  haine diferite). O sesiune = o **zi** de înregistrare (scriptul poate fi
+  repornit de oricâte ori în aceeași zi). Ultima zi a fiecărui semn e setul de test, ca la
   semnele statice (ultimul „take”).
 - Se salvează coordonatele în **pixeli**, nenormalizate: dacă schimbăm
   feature-urile mai târziu, nu trebuie reînregistrat nimic.

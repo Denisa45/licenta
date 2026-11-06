@@ -3,9 +3,15 @@ Loads ../data/dynamic/sequences.csv as one entry per recorded sequence, and
 splits it the same way as the static signs: for every sign, the last recording
 session is the held-out test set (if the sign has only one session, its last
 20% sequences are used instead).
+
+A session is the DAY a sequence was recorded (from its seq id, a timestamp),
+not one run of record_sequences.py: restarting the script on the same day
+keeps the same light and clothes, so those sequences must not end up split
+between training and test.
 """
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -38,7 +44,7 @@ def load(csv=CSV):
     if REJECTED.exists():
         rejected = {int(l) for l in REJECTED.read_text().split() if l.strip()}
     out = []
-    for (label, session, seq), g in df.groupby(["label", "session", "seq"], sort=False):
+    for (label, seq), g in df.groupby(["label", "seq"], sort=False):
         if seq in rejected:
             continue
         g = g.sort_values("t")
@@ -46,7 +52,8 @@ def load(csv=CSV):
         # missing; this also catches sequences recorded by an older version.
         if len(g) < 5 or g["t"].iloc[-1] - g["t"].iloc[0] < MIN_HAND_FRAMES * DURATION:
             continue
-        out.append(Sequence(label, int(session), int(seq), g["t"].to_numpy(),
+        session = int(datetime.fromtimestamp(int(seq) / 1000).strftime("%Y%m%d"))
+        out.append(Sequence(label, session, int(seq), g["t"].to_numpy(),
                             g[POINT_COLS].to_numpy(dtype=np.float64).reshape(-1, 21, 3)))
     return out
 
