@@ -25,6 +25,8 @@ def load_signs(db: Session, path: Path) -> int:
     for item in items:
         data = SignSchema.model_validate(item).model_dump()
         data["sort_order"] = data.pop("order")
+        # Fără 'shape', camera caută semnul după nume (A se vede ca A).
+        data["shape"] = data["shape"] or data["name"]
         sign = db.get(Sign, data["id"])
         if sign is None:
             db.add(Sign(**data))

@@ -105,7 +105,11 @@ class Sign {
       order: (data['order'] as num?)?.toInt() ?? 0,
       verified: (data['verified'] ?? false) as bool,
       robotPose: pose.map((k, v) => MapEntry(k, (v as num).toInt())),
-      shape: (data['shape'] ?? data['name'] ?? '').toString(),
+      // An empty or missing 'shape' means the sign's own name (A is seen as A).
+      shape: switch ((data['shape'] ?? '').toString()) {
+        '' => (data['name'] ?? '').toString(),
+        final shape => shape,
+      },
       letters: [for (final l in data['letters'] as List? ?? []) l.toString()],
       motion: (data['motion'] ?? false) as bool,
     );

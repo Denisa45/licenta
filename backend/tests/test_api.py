@@ -44,6 +44,7 @@ def test_signs_seeded_in_order(client):
     signs = client.get("/signs", headers=h).json()
     assert [s["id"] for s in signs] == ["0", "1", "2", "3", "4", "5"]
     assert signs[2]["order"] == 3
+    assert signs[2]["shape"] == "2"
     assert signs[2]["robot_pose"] == {"thumb": 0, "index": 1, "middle": 1, "ring": 0, "pinky": 0}
 
 

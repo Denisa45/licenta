@@ -13,7 +13,6 @@
       "ring": 0,
       "pinky": 0
     },
-    "shape": "0",
     "letters": [],
     "motion": false
   },
@@ -31,7 +30,6 @@
       "ring": 0,
       "pinky": 0
     },
-    "shape": "1",
     "letters": [],
     "motion": false
   },
@@ -49,7 +47,6 @@
       "ring": 0,
       "pinky": 0
     },
-    "shape": "2",
     "letters": [],
     "motion": false
   },
@@ -67,7 +64,6 @@
       "ring": 0,
       "pinky": 0
     },
-    "shape": "3",
     "letters": [],
     "motion": false
   },
@@ -85,7 +81,6 @@
       "ring": 1,
       "pinky": 1
     },
-    "shape": "4",
     "letters": [],
     "motion": false
   },
@@ -103,7 +98,6 @@
       "ring": 1,
       "pinky": 1
     },
-    "shape": "5",
     "letters": [],
     "motion": false
   }
