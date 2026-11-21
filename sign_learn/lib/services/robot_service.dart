@@ -1,29 +1,46 @@
 // lib/services/robot_service.dart
 //
-// Sends a sign to the robotic hand through Firestore:
-//   robot_commands/{auto}  {sign_id, uid, status: 'pending', created_at}
-// The Raspberry Pi (hw/command_listener.py) takes the command, moves the hand
-// and sets status to 'processing', then 'completed' or 'error'.
+// Trimite un semn mâinii robotice prin server (backend/):
+//   POST /robot/commands {sign_id}   -> comanda, cu status 'pending'
+//   GET  /robot/commands/{id}        -> statusul, verificat la fiecare secundă
+// Raspberry Pi-ul (hw/command_listener.py) preia comanda de la server, mișcă
+// mâna și schimbă statusul în 'processing', apoi 'completed' sau 'error'.
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
+
+import 'api_client.dart';
 
 class RobotService {
   RobotService._();
   static final instance = RobotService._();
 
-  final _db = FirebaseFirestore.instance;
+  static const _pollEvery = Duration(seconds: 1);
+  static const _finalStates = {'completed', 'error', 'expired'};
+
+  final _api = ApiClient.instance;
 
   /// Creates the command and returns the stream of its status.
   Future<Stream<String>> showSign(String signId) async {
-    final ref = await _db.collection('robot_commands').add({
-      'sign_id': signId,
-      'uid': FirebaseAuth.instance.currentUser?.uid,
-      'status': 'pending',
-      'created_at': FieldValue.serverTimestamp(),
-    });
-    return ref.snapshots().map(
-      (snap) => (snap.data()?['status'] ?? 'pending').toString(),
-    );
+    final cmd = await _api.post('/robot/commands', {'sign_id': signId});
+    return _poll((cmd['id'] as num).toInt());
+  }
+
+  Stream<String> _poll(int id) async* {
+    var last = '';
+    while (true) {
+      String status;
+      try {
+        final cmd = await _api.get('/robot/commands/$id');
+        status = (cmd['status'] ?? 'pending').toString();
+      } on ApiException {
+        status = last.isEmpty ? 'pending' : last; // încearcă din nou
+      }
+      if (status != last) {
+        last = status;
+        yield status;
+      }
+      if (_finalStates.contains(status)) return;
+      await Future<void>.delayed(_pollEvery);
+    }
   }
 }

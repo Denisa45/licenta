@@ -14,18 +14,21 @@
 # ex. /home/pi/Desktop/licenta/.venv/bin/python.
 
 [Unit]
-Description=Mana robotica - asculta comenzi din Firestore
+Description=Mana robotica - preia comenzi de la server
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 User=pi
 WorkingDirectory=/home/pi/Desktop/licenta/hw
-Environment=FIREBASE_KEY=/home/pi/firebase-key.json
+# Adresa serverului (calculatorul pe care rulează backend/) și cheia robotului,
+# aceeași ca ROBOT_API_KEY din backend/.env
+Environment=SERVER_URL=http://192.168.1.10:8000
+Environment=ROBOT_API_KEY=schimba-si-cheia-robotului
 Environment=ROBOT_HOLD=5
 Environment=ROBOT_LETTER_HOLD=2
 ExecStart=/usr/bin/python3 -u command_listener.py
-# fără rețea la boot, firebase eșuează: încearcă din nou după 5 s
+# dacă programul se oprește, încearcă din nou după 5 s
 Restart=always
 RestartSec=5
 

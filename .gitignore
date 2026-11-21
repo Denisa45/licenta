@@ -7,8 +7,6 @@ ml/.venv/
 *.pyc
 *.joblib
 
-# Firebase CLI log
-firebase-debug.log
 
 signLearn/
 doc/Cristina_Dumitru_CNIV_Final.doc
@@ -17,7 +15,7 @@ doc/Cristina_Dumitru_CNIV_Final.doc
 all_code.txt
 .vscode/
 .venv*/
-# Cheia contului de serviciu Firebase (Pi)
+# Cheia Firebase, folosită doar o dată la export (backend/scripts/export_firestore.py)
 firebase-key.json
 *-firebase-adminsdk-*.json
 
@@ -25,3 +23,6 @@ firebase-key.json
 **/build/
 hs_err_pid*.log
 replay_pid*.log
+
+# Setările serverului (parole, chei)
+backend/.env

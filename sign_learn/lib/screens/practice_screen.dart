@@ -5,12 +5,12 @@
 // recognized, the attempt is saved in practice_sessions (step 'practice').
 // With a sign picked, the robot hand can show it first.
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../sign_classifier.dart';
 import '../services/progress_service.dart';
+import '../services/sign_service.dart';
 import '../widgets/language_button.dart';
 import '../widgets/dynamic_sign_camera.dart';
 import '../widgets/robot_button.dart';
@@ -25,14 +25,9 @@ class PracticeScreen extends StatefulWidget {
 }
 
 class _PracticeScreenState extends State<PracticeScreen> {
-  late final Future<List<Sign>> _signs = FirebaseFirestore.instance
-      .collection('signs')
-      .orderBy('order')
-      .get()
+  late final Future<List<Sign>> _signs = SignService.instance.all()
       // Words are practised letter by letter in their lesson, not here.
-      .then(
-        (s) => s.docs.map(Sign.fromFirestore).where((s) => !s.isWord).toList(),
-      );
+      .then((signs) => signs.where((s) => !s.isWord).toList());
 
   SignReading? _reading;
   Sign? _target;

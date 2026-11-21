@@ -3,12 +3,11 @@
 // "Progres": summary of the lessons (from progress/) and of the camera attempts
 // (from practice_sessions/) of the signed-in user.
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
 import '../services/progress_service.dart';
+import '../services/sign_service.dart';
 import '../widgets/language_button.dart';
 import '../l10n.dart';
 
@@ -20,16 +19,9 @@ class ProgressScreen extends StatefulWidget {
 }
 
 class _ProgressScreenState extends State<ProgressScreen> {
-  final _signsStream = FirebaseFirestore.instance
-      .collection('signs')
-      .orderBy('order')
-      .snapshots();
+  final _signsFuture = SignService.instance.all();
   final _progressStream = ProgressService.instance.watch();
-  // Filtered by uid only and sorted here, so no composite index is needed.
-  final _sessionsStream = FirebaseFirestore.instance
-      .collection('practice_sessions')
-      .where('uid', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-      .snapshots();
+  final _sessionsStream = ProgressService.instance.watchSessions();
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +30,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
         title: Text(tr('Progres', 'Progress')),
         actions: const [LanguageButton()],
       ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _signsStream,
+      body: FutureBuilder<List<Sign>>(
+        future: _signsFuture,
         builder: (context, signSnap) {
           if (signSnap.hasError) {
             return Center(
@@ -49,11 +41,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
           if (!signSnap.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final signs = signSnap.data!.docs.map(Sign.fromFirestore).toList();
+          final signs = signSnap.data!;
           return StreamBuilder<Map<String, SignProgress>>(
             stream: _progressStream,
             builder: (context, progSnap) {
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              return StreamBuilder<List<Map<String, dynamic>>>(
                 stream: _sessionsStream,
                 builder: (context, sessSnap) {
                   final error = progSnap.error ?? sessSnap.error;
@@ -65,9 +57,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   return _ProgressBody(
                     signs: signs,
                     progress: progSnap.data ?? const {},
-                    sessions: [
-                      for (final d in sessSnap.data?.docs ?? const []) d.data(),
-                    ],
+                    sessions: sessSnap.data ?? const [],
                   );
                 },
               );
@@ -108,8 +98,8 @@ class _ProgressBody extends StatelessWidget {
 
     final recent = [...camera]
       ..sort((a, b) {
-        final ta = a['timestamp'] as Timestamp?;
-        final tb = b['timestamp'] as Timestamp?;
+        final ta = a['timestamp'] as DateTime?;
+        final tb = b['timestamp'] as DateTime?;
         if (ta == null || tb == null) return ta == null ? -1 : 1;
         return tb.compareTo(ta);
       });
@@ -185,7 +175,7 @@ class _ProgressBody extends StatelessWidget {
                 subtitle: Text(
                   'Recunoscut: ${s['predicted_sign']} · '
                   '${(((s['confidence'] as num?) ?? 0) * 100).round()}%'
-                  '${_date(s['timestamp'] as Timestamp?)}',
+                  '${_date(s['timestamp'] as DateTime?)}',
                 ),
               ),
           ],
@@ -194,9 +184,9 @@ class _ProgressBody extends StatelessWidget {
     );
   }
 
-  static String _date(Timestamp? t) {
+  static String _date(DateTime? t) {
     if (t == null) return '';
-    final d = t.toDate();
+    final d = t;
     String two(int v) => v.toString().padLeft(2, '0');
     return ' · ${two(d.day)}.${two(d.month)} ${two(d.hour)}:${two(d.minute)}';
   }
