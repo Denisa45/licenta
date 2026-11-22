@@ -1,0 +1,236 @@
+[
+  {
+    "id": "1",
+    "name": "1",
+    "unit": "unit1",
+    "order": 1,
+    "verified": false,
+    "robot_pose": {
+      "middle": 0,
+      "thumb": 0,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    }
+  },
+  {
+    "id": "2",
+    "name": "2",
+    "unit": "unit1",
+    "order": 2,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 0,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    }
+  },
+  {
+    "id": "3",
+    "name": "3",
+    "unit": "unit1",
+    "order": 3,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 1,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    }
+  },
+  {
+    "id": "4",
+    "name": "4",
+    "unit": "unit1",
+    "order": 4,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 0,
+      "index": 1,
+      "ring": 1,
+      "pinky": 1
+    }
+  },
+  {
+    "id": "5",
+    "name": "5",
+    "unit": "unit1",
+    "order": 5,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 1,
+      "index": 1,
+      "ring": 1,
+      "pinky": 1
+    }
+  },
+  {
+    "id": "L",
+    "name": "L",
+    "description_en": "Raise the thumb and index finger, like an L. Keep the other fingers bent.",
+    "unit": "unit2",
+    "order": 6,
+    "verified": true,
+    "robot_pose": {
+      "middle": 0,
+      "thumb": 1,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "L"
+  },
+  {
+    "id": "A",
+    "name": "A",
+    "description_en": "Make a fist and raise the thumb.",
+    "unit": "unit2",
+    "order": 7,
+    "verified": true,
+    "robot_pose": {
+      "middle": 0,
+      "thumb": 1,
+      "index": 0,
+      "pinky": 0,
+      "ring": 0
+    },
+    "shape": "A"
+  },
+  {
+    "id": "V",
+    "name": "V",
+    "description_en": "Raise the index and middle fingers, spread apart, like a V.",
+    "unit": "unit2",
+    "order": 8,
+    "verified": true,
+    "robot_pose": {
+      "pinky": 0,
+      "thumb": 0,
+      "index": 1,
+      "middle": 1,
+      "ring": 0
+    },
+    "shape": "2"
+  },
+  {
+    "id": "B",
+    "name": "B",
+    "description_en": "Raise four fingers held together; the thumb remains bent over the palm.",
+    "unit": "unit2",
+    "order": 9,
+    "verified": true,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 0,
+      "ring": 1,
+      "pinky": 1,
+      "index": 1
+    },
+    "shape": "4"
+  },
+  {
+    "id": "D",
+    "name": "D",
+    "description_en": "Raise the index finger; the other fingers close and touch the thumb.",
+    "unit": "unit2",
+    "order": 10,
+    "verified": true,
+    "robot_pose": {
+      "pinky": 0,
+      "thumb": 0,
+      "index": 1,
+      "ring": 0,
+      "middle": 0
+    },
+    "shape": "1"
+  },
+  {
+    "id": "DA",
+    "name": "DA",
+    "description_en": "The word DA is shown letter by letter: D, then A.",
+    "unit": "unit3",
+    "order": 11,
+    "verified": true,
+    "letters": [
+      "D",
+      "A"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "ALB",
+    "name": "ALB",
+    "description_en": "The word ALB is shown letter by letter: A, L, then B.",
+    "unit": "unit3",
+    "order": 12,
+    "verified": true,
+    "letters": [
+      "A",
+      "L",
+      "B"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "VAL",
+    "name": "VAL",
+    "description_en": "The word VAL is shown letter by letter: V, A, then L",
+    "unit": "unit3",
+    "order": 13,
+    "verified": true,
+    "letters": [
+      "V",
+      "A",
+      "L"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "BAL",
+    "name": "BAL",
+    "description_en": "The word BAL is shown letter by letter: B, A, then L",
+    "unit": "unit3",
+    "order": 14,
+    "verified": true,
+    "letters": [
+      "B",
+      "A",
+      "L"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "VAD",
+    "name": "VAD",
+    "description_en": "The word VAD is shown letter by letter: V, A, then D",
+    "unit": "unit3",
+    "order": 15,
+    "verified": true,
+    "letters": [
+      "V",
+      "A",
+      "D"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "VLAD",
+    "name": "VLAD",
+    "description_en": "The word VLAD is shown letter by letter: V,L, A, then D",
+    "unit": "unit3",
+    "order": 16,
+    "verified": true,
+    "letters": [
+      "V",
+      "L",
+      "A",
+      "D"
+    ],
+    "robot_pose": {}
+  }
+]
