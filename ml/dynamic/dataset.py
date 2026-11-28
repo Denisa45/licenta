@@ -64,16 +64,21 @@ def split(seqs):
         mine = sorted((s for s in seqs if s.label == label), key=lambda s: s.seq)
         sessions = sorted({s.session for s in mine})
         last = [s for s in mine if s.session == sessions[-1]]
-        # Hold out the last day, unless it holds most of the sign's sequences
-        # (e.g. a few test recordings one day, the real 30 the next): then the
-        # training set would be almost empty, so fall back to the last 20%.
+        earlier = [s for s in mine if s.session != sessions[-1]]
         if len(sessions) >= 2 and len(last) <= len(mine) // 2:
-            train += [s for s in mine if s.session != sessions[-1]]
+            # Usual case: hold out the last day.
+            train += earlier
             test += last
+        elif len(sessions) >= 2:
+            # The last day holds most sequences (a few tries one day, the real
+            # 30 another): train on it and test on the other days, so the test
+            # is still a different day than the training.
+            print(f"NOTE: sign {label}: {len(last)} of its {len(mine)} sequences are from the "
+                  f"last day; training on it, testing on the {len(earlier)} from other days.")
+            train += last
+            test += earlier
         else:
-            why = ("has one session only" if len(sessions) < 2 else
-                   f"has {len(last)} of its {len(mine)} sequences on the last day")
-            print(f"NOTE: sign {label} {why}, holding out its last 20% sequences.")
+            print(f"NOTE: sign {label} has one session only, holding out its last 20% sequences.")
             k = max(1, len(mine) // 5)
             train += mine[:-k]
             test += mine[-k:]
