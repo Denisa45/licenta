@@ -1,136 +1,104 @@
-"""Ascultă comenzile din Firestore și le execută pe mâna robotică.
+"""Preia comenzile de la server și le execută pe mâna robotică.
 
-Aplicația scrie în robot_commands un document {sign_id, uid, status: "pending",
-created_at}. Pi-ul îl preia (pending -> processing), citește robot_pose din
-signs/{sign_id}, arată semnul, apoi pune status = "completed" sau "error".
-Un cuvânt (semn cu "letters", ex. DA: ["D", "A"]) e arătat literă cu literă,
-fiecare cu robot_pose din signs/{literă}.
-Starea mâinii se scrie în robot_status/hand.
+Aplicația trimite serverului POST /robot/commands {sign_id}. Pi-ul întreabă
+serverul la fiecare POLL secunde (POST /robot/commands/next): serverul îi dă cea
+mai veche comandă (pending -> processing), cu pozițiile degetelor deja citite
+din baza de date. Pentru un cuvânt (ex. DA = D + A) primește câte un pas pe
+literă. După mișcare, Pi-ul raportează 'completed' sau 'error'.
+Starea mâinii (idle / moving / offline) se trimite cu PUT /robot/status.
+
+Comenzile prea vechi (trimise cât timp Pi-ul era oprit) sunt marcate 'expired'
+de server, deci mâna nu arată semne vechi la pornire.
 
 Rulare pe Pi:
-  python3 hw/command_listener.py
-Cheia contului de serviciu: ~/firebase-key.json (sau calea din FIREBASE_KEY).
-Nu o pune niciodată în Git.
+  SERVER_URL=http://192.168.1.10:8000 ROBOT_API_KEY=... python3 hw/command_listener.py
+ROBOT_API_KEY trebuie să fie aceeași cu cea din backend/.env. Nu o pune în Git.
 """
 import os
-import queue
 import signal
 import time
 
-import firebase_admin
-from firebase_admin import credentials, firestore
+import requests
 
 from robot_hand import release, set_fingers
 
-KEY_PATH = os.environ.get("FIREBASE_KEY", os.path.expanduser("~/firebase-key.json"))
+SERVER_URL = os.environ.get("SERVER_URL", "http://localhost:8000").rstrip("/")
+API_KEY = os.environ.get("ROBOT_API_KEY", "")
 HOLD = float(os.environ.get("ROBOT_HOLD", 5))  # secunde cât ține semnul, apoi mâna se deschide
 LETTER_HOLD = float(os.environ.get("ROBOT_LETTER_HOLD", 2))  # secunde pe literă, la cuvinte
-# Comenzile mai vechi de atât (ex. trimise cât timp Pi-ul era oprit) nu se mai
-# execută, ca mâna să nu arate semne vechi la pornire. Aplicația așteaptă 20 s.
-MAX_AGE = 15
+POLL = float(os.environ.get("ROBOT_POLL", 0.5))  # cât de des întreabă serverul (secunde)
 
-# chei robot_pose din Firestore -> numele degetelor din robot_hand.py
+# chei robot_pose din baza de date -> numele degetelor din robot_hand.py
 POSE_KEYS = {"thumb": "police", "index": "aratator", "middle": "mijlociu",
              "ring": "inelar", "pinky": "mic"}
 
-firebase_admin.initialize_app(credentials.Certificate(KEY_PATH))
-db = firestore.client()
-status_doc = db.collection("robot_status").document("hand")
-pending = queue.Queue()
+http = requests.Session()
+http.headers["X-Robot-Key"] = API_KEY
 
 
-@firestore.transactional
-def claim(transaction, ref):
-    """pending -> processing, o singură dată, chiar dacă evenimentul vine de două ori."""
-    snap = ref.get(transaction=transaction)
-    if not snap.exists or snap.get("status") != "pending":
-        return False
-    transaction.update(ref, {"status": "processing",
-                             "started_at": firestore.SERVER_TIMESTAMP})
-    return True
-
-
-def on_snapshot(docs, changes, read_time):
-    # rulează pe firul Firestore; mișcarea se face pe firul principal
-    for change in changes:
-        if change.type.name != "ADDED":
-            continue
-        ref = change.document.reference
-        if age(change.document, read_time) > MAX_AGE:
-            print(f"Comandă veche ignorată: {ref.id}")
-            ref.update({"status": "expired"})
-        else:
-            pending.put(ref)
-
-
-def age(snap, read_time):
-    """Câte secunde are comanda; read_time vine de la server, nu de la ceasul Pi-ului."""
-    try:
-        return (read_time - snap.get("created_at")).total_seconds()
-    except (KeyError, TypeError):
-        return 0  # fără created_at încă: o tratăm ca nouă
+def api(method, path, **kwargs):
+    r = http.request(method, f"{SERVER_URL}{path}", timeout=10, **kwargs)
+    r.raise_for_status()
+    return r
 
 
 def set_status(state, sign_id=None):
-    status_doc.set({"state": state, "current_sign": sign_id,
-                    "updated_at": firestore.SERVER_TIMESTAMP})
-
-
-def open_fingers(sign_id):
-    """Degetele întinse ale unui semn, din robot_pose din Firestore."""
-    sign = db.collection("signs").document(str(sign_id)).get()
-    if not sign.exists:
-        raise ValueError(f"semn necunoscut: {sign_id}")
-    pose = sign.to_dict().get("robot_pose") or {}
-    return [POSE_KEYS[k] for k, v in pose.items() if k in POSE_KEYS and v == 1]
-
-
-def execute(ref):
-    if not claim(db.transaction(), ref):
-        return
-    sign_id = ref.get().get("sign_id")
     try:
-        sign = db.collection("signs").document(str(sign_id)).get()
-        if not sign.exists:
-            raise ValueError(f"semn necunoscut: {sign_id}")
-        letters = sign.to_dict().get("letters") or []
-        # (degete întinse, cât ține) pentru fiecare pas: o literă sau semnul
-        steps = ([(open_fingers(l), LETTER_HOLD) for l in letters] if letters
-                 else [(open_fingers(sign_id), HOLD)])
+        api("PUT", "/robot/status", json={"state": state, "current_sign": sign_id})
+    except requests.RequestException as e:
+        print(f"Nu am putut trimite starea '{state}': {e}")
 
+
+def open_fingers(pose):
+    """Degetele întinse (valoarea 1 în robot_pose)."""
+    return [POSE_KEYS[k] for k, v in (pose or {}).items() if k in POSE_KEYS and v == 1]
+
+
+def execute(job):
+    sign_id = job["sign_id"]
+    hold = LETTER_HOLD if job["is_word"] else HOLD
+    try:
         set_status("moving", sign_id)
-        for fingers, hold in steps:
-            print(f"Semnul {sign_id}: {fingers}")
+        for step in job["steps"]:
+            fingers = open_fingers(step["robot_pose"])
+            print(f"Semnul {step['sign_id']}: {fingers}")
             set_fingers(fingers)
             time.sleep(hold)
         set_fingers(list(POSE_KEYS.values()))   # înapoi la mâna deschisă
         release()
-
-        ref.update({"status": "completed", "completed_at": firestore.SERVER_TIMESTAMP})
+        result = {"status": "completed"}
     except Exception as e:
         release()
         print(f"Eroare la {sign_id}: {e}")
-        ref.update({"status": "error", "error_message": str(e),
-                    "completed_at": firestore.SERVER_TIMESTAMP})
-    finally:
-        set_status("idle")
+        result = {"status": "error", "error_message": str(e)}
+    try:
+        api("POST", f"/robot/commands/{job['id']}/result", json=result)
+    except requests.RequestException as e:
+        print(f"Nu am putut raporta rezultatul comenzii {job['id']}: {e}")
+    set_status("idle")
 
 
 def main():
+    if not API_KEY:
+        raise SystemExit("Lipsește ROBOT_API_KEY (aceeași ca în backend/.env).")
     # systemctl stop trimite SIGTERM: oprește-te ca la Ctrl+C, cu mâna eliberată
     signal.signal(signal.SIGTERM, signal.default_int_handler)
     set_status("idle")
-    watch = (db.collection("robot_commands")
-             .where(filter=firestore.FieldFilter("status", "==", "pending"))
-             .on_snapshot(on_snapshot))
-    print("Aștept comenzi... (Ctrl+C pentru oprire)")
+    print(f"Aștept comenzi de la {SERVER_URL}... (Ctrl+C pentru oprire)")
     try:
         while True:
-            execute(pending.get())
+            try:
+                r = api("POST", "/robot/commands/next")
+                if r.status_code == 200:
+                    execute(r.json())
+                    continue          # poate mai sunt comenzi: întreabă imediat
+            except requests.RequestException as e:
+                print(f"Serverul nu răspunde: {e}")
+                time.sleep(5)
+            time.sleep(POLL)
     except KeyboardInterrupt:
         pass
     finally:
-        watch.unsubscribe()
         release()
         set_status("offline")
 

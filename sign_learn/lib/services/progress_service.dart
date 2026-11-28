@@ -1,16 +1,19 @@
 // lib/services/progress_service.dart
 //
-// Reads and writes the learner's progress in Firestore:
-//   progress/{uid}_{signId}   one document per sign (lesson)
-//   practice_sessions/{auto}  one document per camera attempt
+// Citește și scrie progresul utilizatorului prin server (backend/):
+//   GET  /progress                    progresul pe fiecare semn (lecție)
+//   POST /progress/{sign}/start       lecția începută
+//   POST /progress/{sign}/complete    lecția terminată
+//   GET  /sessions, POST /sessions    încercările cu camera
 //
-// Writes never read first: the security rules only allow reading documents that
-// already exist and belong to the user, so set(..., merge: true) is used instead.
+// Serverul știe cine e utilizatorul din token, deci fiecare vede doar datele lui.
+// watch() și watchSessions() reîncarcă datele după fiecare scriere, ca ecranele
+// să se actualizeze singure (cum făceau înainte ascultătorii Firestore).
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
 import '../models/sign.dart';
+import 'api_client.dart';
 
 class SignProgress {
   final String signId;
@@ -40,38 +43,80 @@ class SignProgress {
     bestConfidence: (d['best_confidence'] as num?)?.toDouble() ?? 0,
     quizScore: (d['quiz_score'] as num?)?.toInt() ?? 0,
     quizTotal: (d['quiz_total'] as num?)?.toInt() ?? 0,
-    completedAt: (d['completed_at'] as Timestamp?)?.toDate(),
+    completedAt: parseDate(d['completed_at']),
   );
 }
+
+/// Data trimisă de server (text ISO 8601, UTC), în ora locală.
+DateTime? parseDate(Object? value) =>
+    value is String ? DateTime.tryParse(value)?.toLocal() : null;
 
 class ProgressService {
   ProgressService._();
   static final instance = ProgressService._();
 
-  final _db = FirebaseFirestore.instance;
+  final _api = ApiClient.instance;
 
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  /// Anunță că progresul s-a schimbat, ca watch() să reîncarce datele.
+  final _changes = StreamController<void>.broadcast();
 
-  DocumentReference<Map<String, dynamic>> _doc(String uid, String signId) =>
-      _db.collection('progress').doc('${uid}_$signId');
-
-  /// All progress documents of the signed-in user, keyed by sign id.
-  Stream<Map<String, SignProgress>> watch() {
-    final uid = _uid;
-    if (uid == null) return Stream.value(const {});
-    return _db
-        .collection('progress')
-        .where('uid', isEqualTo: uid)
-        .snapshots()
-        .map(
-          (snap) => {
-            for (final d in snap.docs)
-              (d.data()['sign_id'] ?? '').toString(): SignProgress.fromMap(
-                d.data(),
-              ),
-          },
-        );
+  Future<Map<String, SignProgress>> fetch() async {
+    final list = await _api.get('/progress') as List;
+    return {
+      for (final d in list)
+        (d['sign_id'] ?? '').toString(): SignProgress.fromMap(
+          d as Map<String, dynamic>,
+        ),
+    };
   }
+
+  /// Încercările cu camera, cele mai noi primele. 'timestamp' e DateTime.
+  Future<List<Map<String, dynamic>>> fetchSessions() async {
+    final list = await _api.get('/sessions') as List;
+    return [
+      for (final d in list)
+        {...d as Map<String, dynamic>, 'timestamp': parseDate(d['timestamp'])},
+    ];
+  }
+
+  /// Progresul utilizatorului pe fiecare semn, actualizat după fiecare scriere.
+  Stream<Map<String, SignProgress>> watch() => _watch(fetch);
+
+  /// Încercările cu camera, actualizate după fiecare încercare nouă.
+  Stream<List<Map<String, dynamic>>> watchSessions() => _watch(fetchSessions);
+
+  /// Încarcă datele când ecranul începe să asculte și din nou după fiecare
+  /// scriere. Când ecranul se închide (cancel), nu mai ascultă schimbările.
+  Stream<T> _watch<T>(Future<T> Function() load) {
+    late final StreamController<T> controller;
+    StreamSubscription<void>? changes;
+    var loadedOnce = false;
+
+    Future<void> refresh() async {
+      try {
+        final value = await load();
+        loadedOnce = true;
+        if (!controller.isClosed) controller.add(value);
+      } catch (e, st) {
+        // Fără conexiune după prima încărcare: păstrăm datele vechi.
+        if (!loadedOnce && !controller.isClosed) controller.addError(e, st);
+      }
+    }
+
+    controller = StreamController<T>(
+      onListen: () {
+        refresh();
+        changes = _changes.stream.listen((_) => refresh());
+      },
+      onCancel: () async {
+        await changes?.cancel();
+        await controller.close();
+      },
+    );
+    return controller.stream;
+  }
+
+  void _changed() => _changes.add(null);
 
   /// Saves one camera attempt and counts it on the lesson.
   /// [step] is 'lesson' or 'practice'; [source] is where the data came from
@@ -84,44 +129,25 @@ class ProgressService {
     required String step,
     String source = 'camera',
   }) async {
-    final uid = _uid;
-    if (uid == null) return;
-    await _db.collection('practice_sessions').add({
-      'uid': uid,
+    await _api.post('/sessions', {
       'target_sign': target.id,
       'predicted_sign': predicted,
-      'confidence': confidence,
+      'confidence': confidence.clamp(0.0, 1.0),
       'success': success,
       'step': step,
       'source': source,
-      'timestamp': FieldValue.serverTimestamp(),
     });
-    if (step == 'lesson') {
-      await _doc(uid, target.id).set({
-        'uid': uid,
-        'sign_id': target.id,
-        'unit': target.unit,
-        'attempts': FieldValue.increment(1),
-        'updated_at': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
+    _changed();
   }
 
-  /// Marks the lesson as started (keeps 'completed' if it was already done).
+  /// Marks the lesson as started (the server keeps 'completed' if it was done).
   Future<void> startLesson(Sign sign, {SignProgress? previous}) async {
-    final uid = _uid;
-    if (uid == null) return;
-    await _doc(uid, sign.id).set({
-      'uid': uid,
-      'sign_id': sign.id,
-      'unit': sign.unit,
-      'status': previous?.completed == true ? 'completed' : 'in_progress',
-      'updated_at': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    await _api.post('/progress/${Uri.encodeComponent(sign.id)}/start');
+    _changed();
   }
 
-  /// Marks the lesson as completed. [previous] is what the path screen already
-  /// knows, so the best confidence is never lowered.
+  /// Marks the lesson as completed. The server never lowers the best confidence
+  /// and keeps the first completion date.
   Future<void> completeLesson({
     required Sign sign,
     required double confidence,
@@ -129,22 +155,11 @@ class ProgressService {
     required int quizTotal,
     SignProgress? previous,
   }) async {
-    final uid = _uid;
-    if (uid == null) return;
-    final best = previous == null || confidence > previous.bestConfidence
-        ? confidence
-        : previous.bestConfidence;
-    await _doc(uid, sign.id).set({
-      'uid': uid,
-      'sign_id': sign.id,
-      'unit': sign.unit,
-      'status': 'completed',
-      'best_confidence': best,
+    await _api.post('/progress/${Uri.encodeComponent(sign.id)}/complete', {
+      'confidence': confidence.clamp(0.0, 1.0),
       'quiz_score': quizScore,
       'quiz_total': quizTotal,
-      if (previous?.completedAt == null)
-        'completed_at': FieldValue.serverTimestamp(),
-      'updated_at': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    });
+    _changed();
   }
 }

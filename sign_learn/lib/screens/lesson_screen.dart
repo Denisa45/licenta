@@ -222,6 +222,7 @@ class _LessonScreenState extends State<LessonScreen> {
     }
 
     if (sign.isWord) return _wordQuestions(single, rnd);
+    if (sign.motion) return _motionQuestions(single, rnd);
 
     return [
       single(
@@ -282,6 +283,61 @@ class _LessonScreenState extends State<LessonScreen> {
         },
         multi: true,
       ),
+    ];
+  }
+
+  /// Signs with movement: which sign a description is, which sign starts
+  /// with a hand shape, and which fingers are up at the start. The robot pose
+  /// of a moving sign is its start shape, so it is never called "the sign".
+  List<_Question> _motionQuestions(
+    _Question Function(String, String, List<String>, {Widget? visual}) single,
+    Random rnd,
+  ) {
+    final others =
+        widget.allSigns
+            .where((s) => s.motion && s.id != sign.id && !s.isWord)
+            .toList()
+          ..shuffle(rnd);
+    return [
+      if (sign.localDescription.isNotEmpty)
+        single(
+          tr(
+            'Ce semn se face așa: „${sign.localDescription}”?',
+            'Which sign is done like this: "${sign.localDescription}"?',
+          ),
+          sign.name,
+          [for (final s in others) s.name],
+        ),
+      single(
+        tr(
+          'Care dintre aceste semne începe cu această formă a mâinii?',
+          'Which of these signs starts with this hand shape?',
+        ),
+        sign.name,
+        [
+          for (final s in others)
+            if (s.raisedFingersText != sign.raisedFingersText) s.name,
+        ],
+        visual: HandPoseView(pose: sign.robotPose, height: 160),
+      ),
+      // A fist (BUNIC) has no stretched finger to choose.
+      if (sign.raisedFingers.isNotEmpty)
+        _Question(
+          prompt: tr(
+            'Ce degete sunt întinse la începutul semnului ${sign.name}?',
+            'Which fingers are stretched at the start of sign ${sign.name}?',
+          ),
+          hint: tr(
+            'Alege toate degetele întinse.',
+            'Choose all the stretched fingers.',
+          ),
+          options: [for (final f in kFingers) fingerName(f)],
+          correct: {
+            for (var i = 0; i < kFingers.length; i++)
+              if (sign.raisedFingers.contains(kFingers[i])) i,
+          },
+          multi: true,
+        ),
     ];
   }
 

@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../l10n.dart';
 
 /// Finger keys used in robot_pose, from thumb to pinky.
@@ -31,7 +29,7 @@ class Sign {
   final bool verified;
   final Map<String, int> robotPose;
 
-  /// Model label the camera must see for this sign: 'shape' from Firestore,
+  /// Model label the camera must see for this sign: 'shape' from the server,
   /// or the sign's own name. V uses the shape of 2, B of 4, D of 1.
   final String shape;
 
@@ -39,7 +37,7 @@ class Sign {
   /// Empty for a single sign.
   final List<String> letters;
 
-  /// True for a sign with movement ('motion: true' in Firestore): it is
+  /// True for a sign with movement ('motion: true' on the server): it is
   /// checked by the sequence model (DynamicSignCamera), not by a held shape.
   final bool motion;
 
@@ -78,7 +76,7 @@ class Sign {
   }
 
   /// Description in the current language: 'description' (Romanian) or
-  /// 'description_en' from Firestore, or one made from robot_pose when missing.
+  /// 'description_en' from the server, or one made from robot_pose when missing.
   String get localDescription =>
       appLang.value == AppLang.en ? descriptionEn : description;
 
@@ -94,20 +92,24 @@ class Sign {
           'Raise the $raisedFingersText; keep the other fingers bent.',
         );
 
-  factory Sign.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data() ?? {};
+  /// One sign from GET /signs (same fields as the old Firestore 'signs').
+  factory Sign.fromJson(Map<String, dynamic> data) {
     final pose = (data['robot_pose'] as Map<String, dynamic>? ?? {});
     return Sign(
-      id: doc.id,
+      id: (data['id'] ?? '').toString(),
       name: (data['name'] ?? '').toString(),
       description: (data['description'] ?? '').toString().trim(),
       descriptionEn: (data['description_en'] ?? '').toString().trim(),
       unit: (data['unit'] ?? '').toString(),
-      difficulty: (data['difficulty'] ?? 1) as int,
-      order: (data['order'] ?? 0) as int,
+      difficulty: (data['difficulty'] as num?)?.toInt() ?? 1,
+      order: (data['order'] as num?)?.toInt() ?? 0,
       verified: (data['verified'] ?? false) as bool,
       robotPose: pose.map((k, v) => MapEntry(k, (v as num).toInt())),
-      shape: (data['shape'] ?? data['name'] ?? '').toString(),
+      // An empty or missing 'shape' means the sign's own name (A is seen as A).
+      shape: switch ((data['shape'] ?? '').toString()) {
+        '' => (data['name'] ?? '').toString(),
+        final shape => shape,
+      },
       letters: [for (final l in data['letters'] as List? ?? []) l.toString()],
       motion: (data['motion'] ?? false) as bool,
     );

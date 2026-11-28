@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Cereri HTTP către server (backend/). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
+        android:usesCleartextTraffic="true"
         android:label="sign_learn"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

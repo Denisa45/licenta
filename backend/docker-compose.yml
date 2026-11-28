@@ -1,0 +1,33 @@
+# Pornește baza de date PostgreSQL și serverul:  docker compose up --build
+# API: http://localhost:8000   Documentație: http://localhost:8000/docs
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: mana
+      POSTGRES_PASSWORD: mana
+      POSTGRES_DB: mana_in_mana
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mana -d mana_in_mana"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://mana:mana@db:5432/mana_in_mana
+      JWT_SECRET: ${JWT_SECRET:-schimba-ma}
+      ROBOT_API_KEY: ${ROBOT_API_KEY:-schimba-si-cheia-robotului}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

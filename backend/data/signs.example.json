@@ -1,0 +1,104 @@
+[
+  {
+    "id": "0",
+    "name": "0",
+    "unit": "unit1",
+    "difficulty": 1,
+    "order": 1,
+    "verified": true,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 0,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "letters": [],
+    "motion": false
+  },
+  {
+    "id": "1",
+    "name": "1",
+    "unit": "unit1",
+    "difficulty": 1,
+    "order": 2,
+    "verified": true,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "letters": [],
+    "motion": false
+  },
+  {
+    "id": "2",
+    "name": "2",
+    "unit": "unit1",
+    "difficulty": 1,
+    "order": 3,
+    "verified": true,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 1,
+      "ring": 0,
+      "pinky": 0
+    },
+    "letters": [],
+    "motion": false
+  },
+  {
+    "id": "3",
+    "name": "3",
+    "unit": "unit1",
+    "difficulty": 1,
+    "order": 4,
+    "verified": true,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 1,
+      "ring": 0,
+      "pinky": 0
+    },
+    "letters": [],
+    "motion": false
+  },
+  {
+    "id": "4",
+    "name": "4",
+    "unit": "unit1",
+    "difficulty": 1,
+    "order": 5,
+    "verified": true,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "letters": [],
+    "motion": false
+  },
+  {
+    "id": "5",
+    "name": "5",
+    "unit": "unit1",
+    "difficulty": 1,
+    "order": 6,
+    "verified": true,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "letters": [],
+    "motion": false
+  }
+]

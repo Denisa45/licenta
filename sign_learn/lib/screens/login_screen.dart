@@ -1,8 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
+import '../services/api_client.dart';
+import '../services/auth_service.dart';
 import '../widgets/language_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,7 +12,8 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-String _authError(FirebaseAuthException e) => switch (e.code) {
+// The server answers with the same error codes Firebase Auth used.
+String _authError(ApiException e) => switch (e.code) {
   'invalid-credential' || 'wrong-password' || 'user-not-found' => tr(
     'Email sau parolă greșită.',
     'Wrong email or password.',
@@ -30,7 +31,10 @@ String _authError(FirebaseAuthException e) => switch (e.code) {
     'Nu există conexiune la internet.',
     'No internet connection.',
   ),
-  _ => e.message ?? e.code,
+  _ => tr(
+    'Eroare de la server: ${e.code}',
+    'Server error: ${e.code}',
+  ),
 };
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -53,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       await action();
-    } on FirebaseAuthException catch (e) {
+    } on ApiException catch (e) {
       setState(() => _error = _authError(e));
     } catch (e) {
       setState(() => _error = e.toString());
@@ -63,26 +67,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signIn() => _run(() async {
-    await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: _email.text.trim(),
-      password: _password.text,
-    );
+    await AuthService.instance.signIn(_email.text.trim(), _password.text);
   });
 
   Future<void> _register() => _run(() async {
-    final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: _email.text.trim(),
-      password: _password.text,
-    );
-    // Your rules require role == 'user' on create.
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(cred.user!.uid)
-        .set({
-          'email': _email.text.trim(),
-          'role': 'user',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+    // The server creates the user with role 'user' and signs it in.
+    await AuthService.instance.register(_email.text.trim(), _password.text);
   });
 
   @override

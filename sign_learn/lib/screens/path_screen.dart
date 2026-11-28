@@ -1,15 +1,15 @@
 // lib/screens/path_screen.dart
 //
-// "Drumul meu": the learning path. One sign per lesson, in the Firestore 'order'.
+// "Drumul meu": the learning path. One sign per lesson, in the server's 'order'.
 // The first lesson is always open; lesson N+1 opens when lesson N is completed.
 // The progress bar is completed lessons / total lessons.
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../models/sign.dart';
+import '../services/auth_service.dart';
 import '../services/progress_service.dart';
+import '../services/sign_service.dart';
 import '../widgets/language_button.dart';
 import '../widgets/sign_widgets.dart';
 import 'lesson_screen.dart';
@@ -30,11 +30,8 @@ class PathScreen extends StatefulWidget {
 }
 
 class _PathScreenState extends State<PathScreen> {
-  // Created once, so rebuilds do not open new Firestore listeners.
-  final _signsStream = FirebaseFirestore.instance
-      .collection('signs')
-      .orderBy('order')
-      .snapshots();
+  // Created once, so rebuilds do not ask the server again.
+  final _signsFuture = SignService.instance.all();
   final _progressStream = ProgressService.instance.watch();
 
   @override
@@ -47,12 +44,12 @@ class _PathScreenState extends State<PathScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: tr('Ieșire', 'Sign out'),
-            onPressed: () => FirebaseAuth.instance.signOut(),
+            onPressed: () => AuthService.instance.signOut(),
           ),
         ],
       ),
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _signsStream,
+      body: FutureBuilder<List<Sign>>(
+        future: _signsFuture,
         builder: (context, signSnap) {
           if (signSnap.hasError) {
             return Center(
@@ -62,7 +59,7 @@ class _PathScreenState extends State<PathScreen> {
           if (!signSnap.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final signs = signSnap.data!.docs.map(Sign.fromFirestore).toList();
+          final signs = signSnap.data!;
 
           return StreamBuilder<Map<String, SignProgress>>(
             stream: _progressStream,

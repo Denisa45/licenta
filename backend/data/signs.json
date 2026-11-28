@@ -1,0 +1,521 @@
+[
+  {
+    "id": "1",
+    "name": "1",
+    "unit": "unit1",
+    "order": 1,
+    "verified": false,
+    "robot_pose": {
+      "middle": 0,
+      "thumb": 0,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    }
+  },
+  {
+    "id": "2",
+    "name": "2",
+    "unit": "unit1",
+    "order": 2,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 0,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    }
+  },
+  {
+    "id": "3",
+    "name": "3",
+    "unit": "unit1",
+    "order": 3,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 1,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    }
+  },
+  {
+    "id": "4",
+    "name": "4",
+    "unit": "unit1",
+    "order": 4,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 0,
+      "index": 1,
+      "ring": 1,
+      "pinky": 1
+    }
+  },
+  {
+    "id": "5",
+    "name": "5",
+    "unit": "unit1",
+    "order": 5,
+    "verified": false,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 1,
+      "index": 1,
+      "ring": 1,
+      "pinky": 1
+    }
+  },
+  {
+    "id": "L",
+    "name": "L",
+    "description_en": "Raise the thumb and index finger, like an L. Keep the other fingers bent.",
+    "unit": "unit2",
+    "order": 6,
+    "verified": true,
+    "robot_pose": {
+      "middle": 0,
+      "thumb": 1,
+      "index": 1,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "L"
+  },
+  {
+    "id": "A",
+    "name": "A",
+    "description_en": "Make a fist and raise the thumb.",
+    "unit": "unit2",
+    "order": 7,
+    "verified": true,
+    "robot_pose": {
+      "middle": 0,
+      "thumb": 1,
+      "index": 0,
+      "pinky": 0,
+      "ring": 0
+    },
+    "shape": "A"
+  },
+  {
+    "id": "V",
+    "name": "V",
+    "description_en": "Raise the index and middle fingers, spread apart, like a V.",
+    "unit": "unit2",
+    "order": 8,
+    "verified": true,
+    "robot_pose": {
+      "pinky": 0,
+      "thumb": 0,
+      "index": 1,
+      "middle": 1,
+      "ring": 0
+    },
+    "shape": "2"
+  },
+  {
+    "id": "B",
+    "name": "B",
+    "description_en": "Raise four fingers held together; the thumb remains bent over the palm.",
+    "unit": "unit2",
+    "order": 9,
+    "verified": true,
+    "robot_pose": {
+      "middle": 1,
+      "thumb": 0,
+      "ring": 1,
+      "pinky": 1,
+      "index": 1
+    },
+    "shape": "4"
+  },
+  {
+    "id": "D",
+    "name": "D",
+    "description_en": "Raise the index finger; the other fingers close and touch the thumb.",
+    "unit": "unit2",
+    "order": 10,
+    "verified": true,
+    "robot_pose": {
+      "pinky": 0,
+      "thumb": 0,
+      "index": 1,
+      "ring": 0,
+      "middle": 0
+    },
+    "shape": "1"
+  },
+  {
+    "id": "DA",
+    "name": "DA",
+    "description_en": "The word DA is shown letter by letter: D, then A.",
+    "unit": "unit3",
+    "order": 11,
+    "verified": true,
+    "letters": [
+      "D",
+      "A"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "ALB",
+    "name": "ALB",
+    "description_en": "The word ALB is shown letter by letter: A, L, then B.",
+    "unit": "unit3",
+    "order": 12,
+    "verified": true,
+    "letters": [
+      "A",
+      "L",
+      "B"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "VAL",
+    "name": "VAL",
+    "description_en": "The word VAL is shown letter by letter: V, A, then L",
+    "unit": "unit3",
+    "order": 13,
+    "verified": true,
+    "letters": [
+      "V",
+      "A",
+      "L"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "BAL",
+    "name": "BAL",
+    "description_en": "The word BAL is shown letter by letter: B, A, then L",
+    "unit": "unit3",
+    "order": 14,
+    "verified": true,
+    "letters": [
+      "B",
+      "A",
+      "L"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "VAD",
+    "name": "VAD",
+    "description_en": "The word VAD is shown letter by letter: V, A, then D",
+    "unit": "unit3",
+    "order": 15,
+    "verified": true,
+    "letters": [
+      "V",
+      "A",
+      "D"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "VLAD",
+    "name": "VLAD",
+    "description_en": "The word VLAD is shown letter by letter: V,L, A, then D",
+    "unit": "unit3",
+    "order": 16,
+    "verified": true,
+    "letters": [
+      "V",
+      "L",
+      "A",
+      "D"
+    ],
+    "robot_pose": {}
+  },
+  {
+    "id": "LA_REVEDERE",
+    "name": "La revedere",
+    "unit": "unit4",
+    "order": 17,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "shape": "LA_REVEDERE",
+    "motion": true,
+    "description": "Ridică mâna deschisă. Strânge și deschide cele patru degete, degetul mare rămâne întins.",
+    "description_en": "Raise your open hand. Close and open the four fingers; the thumb stays stretched."
+  },
+  {
+    "id": "SALUT",
+    "name": "Salut",
+    "unit": "unit4",
+    "order": 18,
+    "difficulty": 1,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "shape": "SALUT",
+    "motion": true,
+    "description": "Ridică mâna deschisă și flutur-o din încheietură, stânga-dreapta.",
+    "description_en": "Raise your open hand and wave it from the wrist, left and right."
+  },
+  {
+    "id": "MULTUMESC",
+    "name": "Mulțumesc",
+    "unit": "unit4",
+    "order": 19,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "shape": "MULTUMESC",
+    "motion": true,
+    "description": "Atinge bărbia cu palma dreaptă, apoi depărtează mâna de bărbie.",
+    "description_en": "Touch your chin with the flat hand, then move the hand away from it."
+  },
+  {
+    "id": "DA_SEMN",
+    "name": "Da",
+    "unit": "unit4",
+    "order": 20,
+    "difficulty": 1,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "DA",
+    "motion": true,
+    "description": "Ridică arătătorul, apoi strânge mâna în pumn.",
+    "description_en": "Raise your index finger, then close the hand into a fist."
+  },
+  {
+    "id": "NU",
+    "name": "Nu",
+    "unit": "unit4",
+    "order": 21,
+    "difficulty": 1,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "NU",
+    "motion": true,
+    "description": "Ridică arătătorul și mișcă-l stânga-dreapta.",
+    "description_en": "Raise your index finger and swing it left and right."
+  },
+  {
+    "id": "BINE",
+    "name": "Bine",
+    "unit": "unit4",
+    "order": 22,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 1,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "BINE",
+    "motion": true,
+    "description": "Ridică arătătorul și mijlociul, apoi coboară mâna.",
+    "description_en": "Raise the index and middle fingers, then move the hand down."
+  },
+  {
+    "id": "MAMA",
+    "name": "Mamă",
+    "unit": "unit4",
+    "order": 23,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "shape": "MAMA",
+    "motion": true,
+    "description": "Atinge obrazul cu palma dreaptă, ținută vertical.",
+    "description_en": "Touch your cheek with the flat hand, held upright."
+  },
+  {
+    "id": "TATA",
+    "name": "Tată",
+    "unit": "unit4",
+    "order": 24,
+    "difficulty": 3,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 0,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "shape": "TATA",
+    "motion": true,
+    "description": "Fă semnul „OK” (degetul mare atinge arătătorul) la tâmplă, apoi du mâna spre lateral.",
+    "description_en": "Make the \"OK\" shape (thumb touches index) at your temple, then move the hand to the side."
+  },
+  {
+    "id": "BUNIC",
+    "name": "Bunic",
+    "unit": "unit4",
+    "order": 25,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 0,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "BUNIC",
+    "motion": true,
+    "description": "Pune pumnul la obraz și răsucește-l.",
+    "description_en": "Put your fist on your cheek and twist it."
+  },
+  {
+    "id": "CAND",
+    "name": "Când?",
+    "unit": "unit4",
+    "order": 26,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 0,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "CAND",
+    "motion": true,
+    "description": "Întinde doar degetul mare și ține mâna la obraz.",
+    "description_en": "Stretch only the thumb and hold the hand at your cheek."
+  },
+  {
+    "id": "UNDE",
+    "name": "Unde?",
+    "unit": "unit4",
+    "order": 27,
+    "difficulty": 3,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "UNDE",
+    "motion": true,
+    "description": "Ține mâna orizontal, cu degetul mare întins, și îndoaie arătătorul spre interior, de câteva ori.",
+    "description_en": "Hold the hand flat with the thumb stretched and bend the index finger inwards a few times."
+  },
+  {
+    "id": "AN",
+    "name": "An",
+    "unit": "unit4",
+    "order": 28,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 1,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "AN",
+    "motion": true,
+    "description": "Prinde bărbia între degetul mare și arătător.",
+    "description_en": "Hold your chin between the thumb and the index finger."
+  },
+  {
+    "id": "SAPTAMANA",
+    "name": "Săptămână",
+    "unit": "unit4",
+    "order": 29,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "SAPTAMANA",
+    "motion": true,
+    "description": "Cu arătătorul, pornește de la bărbie și du mâna în față, spre celălalt.",
+    "description_en": "With the index finger, start at your chin and move the hand forward, towards the other person."
+  },
+  {
+    "id": "APA",
+    "name": "Apă",
+    "unit": "unit4",
+    "order": 30,
+    "difficulty": 2,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 0,
+      "middle": 1,
+      "ring": 1,
+      "pinky": 1
+    },
+    "shape": "APA",
+    "motion": true,
+    "description": "Fă semnul „OK” și mișcă mâna spre tine, de câteva ori.",
+    "description_en": "Make the \"OK\" shape and move the hand towards yourself a few times."
+  },
+  {
+    "id": "VINO",
+    "name": "Vino",
+    "unit": "unit4",
+    "order": 31,
+    "difficulty": 1,
+    "verified": false,
+    "robot_pose": {
+      "thumb": 0,
+      "index": 1,
+      "middle": 0,
+      "ring": 0,
+      "pinky": 0
+    },
+    "shape": "VINO",
+    "motion": true,
+    "description": "Îndoaie arătătorul spre tine, ca atunci când chemi pe cineva.",
+    "description_en": "Bend your index finger towards yourself, as when you call someone over."
+  }
+]
